@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { SHIPMENTS, CITIES } from "@/lib/data";
+import { SHIPMENTS, CITIES, STATUS } from "@/lib/data";
 
 const KEY = "rt_shipments_v1";
 let listeners = new Set();
@@ -31,6 +31,7 @@ export const addShipment = (s) => {
   // ensure routeCoords + route names present
   if (s.stops && !s.routeCoords) s.routeCoords = s.stops.map((p) => [p.lng, p.lat]);
   if (s.stops && !s.route) s.route = s.stops.map((p) => p.city);
+  if (!STATUS[s.status]) s.status = "in_transit"; // normalise unknown statuses
   s.createdByUser = true;
   created = [s, ...created];
   localStorage.setItem(KEY, JSON.stringify(created));
