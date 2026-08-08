@@ -4,7 +4,7 @@ import { X, Sparkles, Loader2, Check, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { aiCreateShipment } from "@/lib/api";
 import { addShipment } from "@/lib/shipStore";
-import { STATUS } from "@/lib/data";
+import { STATUS, CITIES } from "@/lib/data";
 
 const EXAMPLES = [
   "Auto parts from Stuttgart to Detroit by air, in transit",
@@ -54,19 +54,51 @@ export default function CreateShipmentModal({ open, onClose, onCreated }) {
     runManual();
   };
 
+  const lookupCity = (name) => {
+    const key = Object.keys(CITIES).find((c) => c.toLowerCase() === name.trim().toLowerCase());
+    return key ? { city: key, lng: CITIES[key][0], lat: CITIES[key][1] } : null;
+  };
+
+  const manualFallback = () => {
+    const o = lookupCity(manual.origin);
+    const d = lookupCity(manual.destination);
+    if (!o || !d) return null;
+    const midEvent = { in_transit: "IN TRANSIT", delayed: "DELAYED", held: "HELD", exception: "EXCEPTION", delivered: "DELIVERED" }[manual.status] || "IN TRANSIT";
+    return {
+      mode: manual.mode,
+      origin: o.city,
+      destination: d.city,
+      carrier: manual.carrier || "Route Tower Network",
+      tracking: "RT-" + Math.floor(Math.random() * 9000000 + 1000000),
+      eta: manual.eta || "Sep 01, 2026",
+      status: manual.status,
+      current: `${manual.status === "delivered" ? "Delivered at " : "En route to "}${d.city}`,
+      stops: [
+        { city: o.city, country: "", lat: o.lat, lng: o.lng, event: "PICKED UP" },
+        { city: d.city, country: "", lat: d.lat, lng: d.lng, event: midEvent },
+      ],
+    };
+  };
+
   const runManual = async () => {
     setLoading(true);
     try {
       const p = `${manual.mode} shipment from ${manual.origin} to ${manual.destination}, carrier ${manual.carrier || "any"}, status ${manual.status}${manual.eta ? ", ETA " + manual.eta : ""}`;
       const s = await aiCreateShipment(p);
-      // honor user's explicit choices
       s.mode = manual.mode; s.status = manual.status;
       if (manual.carrier) s.carrier = manual.carrier;
       if (manual.eta) s.eta = manual.eta;
       confirmAdd(s);
     } catch {
-      toast.error("Couldn't geocode that route. Check city names.");
-      setLoading(false);
+      // AI down — fall back to a simple route from the known cities table
+      const fb = manualFallback();
+      if (fb) {
+        fb.id = "CT-" + Math.floor(Math.random() * 90000 + 10000);
+        confirmAdd(fb);
+      } else {
+        toast.error("Couldn't build that route. Try well-known city names or the AI tab.");
+        setLoading(false);
+      }
     }
   };
 

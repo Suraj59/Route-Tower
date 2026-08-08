@@ -22,8 +22,18 @@ Modern, enterprise-grade startup marketing website for "Control Tower Shipment" 
 - Shipment Detail: header meta, vertical journey timeline, current-location map, active exception panel, event history, POD note.
 - Request-a-Demo modal → lead saved + email sent (verified emailed:true).
 
+## Implemented (2026-08-08, round 3 — Route Tower rebrand + AI)
+- Rebranded "Control Tower" → "Route Tower" everywhere (UI + lead emails).
+- Create Shipment (AI + manual) — browser-only via localStorage (rt_shipments_v1), useSyncExternalStore store; created shipments appear on hero map/list, dashboard table & maps, and have working detail pages.
+- AI (Gemini 3 Flash / gemini-3-flash-preview via Emergent LLM key): POST /api/ai/create-shipment (NL → structured shipment w/ real lat/lng stops) and POST /api/ai/insight (tracking co-pilot recommendation). 25s timeout guard.
+- Live ETA Countdown (ticks every second) on hero list, dashboard ETA column, and shipment detail header.
+- Route Playback (play/pause/scrub/reset) moving a marker along the route on shipment detail map.
+- Dark "Control Room" theme toggle on dashboard (CSS-variable based, .dash-root.dark).
+- ROI Estimator on pricing page (live savings calculator with sliders).
+- Manual create has an AI-independent fallback (geocodes from CITIES table).
+- Verified 100% by testing agent (iteration_3).
+
 ## Backlog / Remaining
-- P2: More sample shipments / richer per-shipment event data
 - P2: Animated shipment markers moving along routes over time
 - P2: Blog / resources / pricing pages
 

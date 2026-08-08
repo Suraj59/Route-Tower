@@ -11,6 +11,7 @@ from typing import List, Optional
 import uuid
 import json
 import re
+import asyncio
 from datetime import datetime, timezone
 from emergentintegrations.llm.chat import LlmChat, UserMessage, TextDelta, StreamDone
 
@@ -175,13 +176,17 @@ async def _gemini(system_message: str, prompt: str, session: str) -> str:
         session_id=session,
         system_message=system_message,
     ).with_model("gemini", GEMINI_MODEL)
-    out = ""
-    async for ev in chat.stream_message(UserMessage(text=prompt)):
-        if isinstance(ev, TextDelta):
-            out += ev.content
-        elif isinstance(ev, StreamDone):
-            break
-    return out
+
+    async def _run():
+        out = ""
+        async for ev in chat.stream_message(UserMessage(text=prompt)):
+            if isinstance(ev, TextDelta):
+                out += ev.content
+            elif isinstance(ev, StreamDone):
+                break
+        return out
+
+    return await asyncio.wait_for(_run(), timeout=25)
 
 
 def _extract_json(text: str):
