@@ -6,6 +6,7 @@ import Header from "@/components/site/Header";
 import Footer from "@/components/site/Footer";
 import DemoModal from "@/components/site/DemoModal";
 import { SectionTag } from "@/components/site/Primitives";
+import ROIEstimator from "@/components/site/ROIEstimator";
 
 const TIERS = [
   {
@@ -138,6 +139,9 @@ export default function Pricing() {
             </table>
           </div>
         </div>
+
+        {/* ROI Estimator */}
+        <ROIEstimator />
 
         {/* CTA */}
         <div className="mt-20 border border-ct-line bg-ct-ink text-white p-10 md:p-14 flex flex-col md:flex-row items-center justify-between gap-6">

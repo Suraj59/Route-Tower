@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Radar } from "lucide-react";
+import { Radar, Plus } from "lucide-react";
+import CreateShipmentModal from "@/components/site/CreateShipmentModal";
 
 export default function Header({ onDemo }) {
   const [scrolled, setScrolled] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const loc = useLocation();
   const navigate = useNavigate();
 
@@ -66,14 +68,24 @@ export default function Header({ onDemo }) {
           )}
         </nav>
 
-        <button
-          onClick={onDemo}
-          className="bg-ct-ink text-white text-sm font-medium px-5 py-2.5 hover:bg-ct-orange transition-colors duration-200"
-          data-testid="header-demo-btn"
-        >
-          Request a Demo
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setCreateOpen(true)}
+            className="hidden sm:inline-flex items-center gap-1.5 border border-ct-line text-ct-ink text-sm font-medium px-4 py-2.5 hover:border-ct-ink transition-colors"
+            data-testid="header-create-btn"
+          >
+            <Plus size={15} /> Create Shipment
+          </button>
+          <button
+            onClick={onDemo}
+            className="bg-ct-ink text-white text-sm font-medium px-5 py-2.5 hover:bg-ct-orange transition-colors duration-200"
+            data-testid="header-demo-btn"
+          >
+            Request a Demo
+          </button>
+        </div>
       </div>
+      <CreateShipmentModal open={createOpen} onClose={() => setCreateOpen(false)} onCreated={(id) => navigate(`/shipment/${id}`)} />
     </header>
   );
 }

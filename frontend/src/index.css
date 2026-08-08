@@ -67,3 +67,12 @@ body {
 
 html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
+
+.dash-root {
+  --dr-page: #F7F7F8; --dr-panel: #FFFFFF; --dr-border: #E5E5EA;
+  --dr-text: #111111; --dr-sub: #8E8E93; --dr-track: #F0F0F2;
+}
+.dash-root.dark {
+  --dr-page: #0A0C10; --dr-panel: #14181F; --dr-border: #252B35;
+  --dr-text: #EEF2F7; --dr-sub: #8892A0; --dr-track: #1E242D;
+}

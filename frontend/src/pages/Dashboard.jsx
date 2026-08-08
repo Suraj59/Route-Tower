@@ -5,16 +5,18 @@ import {
   AreaChart, Area, Tooltip, CartesianGrid,
 } from "recharts";
 import { motion } from "framer-motion";
-import { ArrowUpRight, TrendingUp, Search } from "lucide-react";
+import { ArrowUpRight, TrendingUp, Search, Moon, Sun } from "lucide-react";
 import Header from "@/components/site/Header";
 import DemoModal from "@/components/site/DemoModal";
 import WorldMap from "@/components/site/WorldMap";
-import { DASHBOARD, SHIPMENTS, STATUS } from "@/lib/data";
+import Countdown from "@/components/site/Countdown";
+import { DASHBOARD, STATUS } from "@/lib/data";
+import { useShipments } from "@/lib/shipStore";
 
 const Panel = ({ title, right, children, className = "", testid }) => (
-  <div className={`border border-ct-line bg-white ${className}`} data-testid={testid}>
-    <div className="flex items-center justify-between px-5 py-3 border-b border-ct-line">
-      <span className="font-mono text-[11px] tracking-[0.2em] uppercase text-ct-gray3">{title}</span>
+  <div className={`border border-[var(--dr-border)] bg-[var(--dr-panel)] ${className}`} data-testid={testid}>
+    <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--dr-border)]">
+      <span className="font-mono text-[11px] tracking-[0.2em] uppercase text-[var(--dr-sub)]">{title}</span>
       {right}
     </div>
     <div className="p-5">{children}</div>
@@ -25,40 +27,47 @@ export default function Dashboard() {
   const [demo, setDemo] = useState(false);
   const [filter, setFilter] = useState("all");
   const [q, setQ] = useState("");
+  const [dark, setDark] = useState(false);
+  const shipments = useShipments();
 
-  const filtered = SHIPMENTS.filter((s) =>
+  const filtered = shipments.filter((s) =>
     (filter === "all" || s.status === filter) &&
     (q === "" || s.id.toLowerCase().includes(q.toLowerCase()) || s.destination.toLowerCase().includes(q.toLowerCase()))
   );
 
   return (
-    <div className="bg-ct-bg2 min-h-screen">
+    <div className={`dash-root ${dark ? "dark" : ""} bg-[var(--dr-page)] min-h-screen`}>
       <Header onDemo={() => setDemo(true)} />
       <div className="max-w-[1400px] mx-auto px-6 md:px-10 pt-24 pb-20">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
           <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
             <div>
               <span className="font-mono text-[11px] tracking-[0.25em] uppercase text-ct-orange">Route Tower Dashboard · Demo</span>
-              <h1 className="font-display text-4xl md:text-5xl tracking-tighter text-ct-ink mt-2">Global Shipment Overview</h1>
+              <h1 className="font-display text-4xl md:text-5xl tracking-tighter text-[var(--dr-text)] mt-2">Global Shipment Overview</h1>
             </div>
-            <div className="text-right">
-              <div className="font-display text-5xl md:text-6xl font-extrabold tracking-tighter text-ct-ink" data-testid="active-count">
-                {DASHBOARD.active.toLocaleString()}
+            <div className="flex items-end gap-5">
+              <button onClick={() => setDark((d) => !d)} className="inline-flex items-center gap-2 border border-[var(--dr-border)] text-[var(--dr-text)] text-sm px-4 py-2.5 hover:border-ct-orange transition-colors" data-testid="dark-toggle">
+                {dark ? <Sun size={15} /> : <Moon size={15} />} {dark ? "Light" : "Control Room"}
+              </button>
+              <div className="text-right">
+                <div className="font-display text-5xl md:text-6xl font-extrabold tracking-tighter text-[var(--dr-text)]" data-testid="active-count">
+                  {DASHBOARD.active.toLocaleString()}
+                </div>
+                <div className="font-mono text-[11px] tracking-[0.2em] uppercase text-[var(--dr-sub)]">Active Shipments</div>
               </div>
-              <div className="font-mono text-[11px] tracking-[0.2em] uppercase text-ct-gray3">Active Shipments</div>
             </div>
           </div>
         </motion.div>
 
         {/* KPI strip */}
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-px bg-ct-line border border-ct-line mb-4">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-px bg-[var(--dr-border)] border border-[var(--dr-border)] mb-4">
           {DASHBOARD.breakdown.map((b) => (
             <div key={b.label} className="bg-white p-5" data-testid={`kpi-${b.label.toLowerCase().replace(/ /g, "-")}`}>
               <div className="flex items-center gap-2 mb-3">
                 <span className="h-2 w-2 rounded-full" style={{ background: b.color }} />
-                <span className="font-mono text-[10px] tracking-wide uppercase text-ct-gray3">{b.label}</span>
+                <span className="font-mono text-[10px] tracking-wide uppercase text-[var(--dr-sub)]">{b.label}</span>
               </div>
-              <div className="font-display text-2xl md:text-3xl tracking-tight text-ct-ink">{b.value.toLocaleString()}</div>
+              <div className="font-display text-2xl md:text-3xl tracking-tight text-[var(--dr-text)]">{b.value.toLocaleString()}</div>
             </div>
           ))}
         </div>
@@ -76,8 +85,8 @@ export default function Dashboard() {
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="font-display text-2xl font-extrabold text-ct-ink">12.4K</span>
-                <span className="font-mono text-[10px] tracking-wide text-ct-gray3">TOTAL</span>
+                <span className="font-display text-2xl font-extrabold text-[var(--dr-text)]">12.4K</span>
+                <span className="font-mono text-[10px] tracking-wide text-[var(--dr-sub)]">TOTAL</span>
               </div>
             </div>
           </Panel>
@@ -118,11 +127,11 @@ export default function Dashboard() {
                 const pct = (c.value / DASHBOARD.byCountry[0].value) * 100;
                 return (
                   <div key={c.country} className="flex items-center gap-4">
-                    <span className="text-sm text-ct-ink w-32 shrink-0">{c.country}</span>
-                    <div className="flex-1 bg-ct-bg3 h-2.5">
+                    <span className="text-sm text-[var(--dr-text)] w-32 shrink-0">{c.country}</span>
+                    <div className="flex-1 bg-[var(--dr-track)] h-2.5">
                       <motion.div className="h-full bg-ct-orange" initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.8 }} />
                     </div>
-                    <span className="font-mono text-xs text-ct-gray2 w-14 text-right">{c.value.toLocaleString()}</span>
+                    <span className="font-mono text-xs text-[var(--dr-sub)] w-14 text-right">{c.value.toLocaleString()}</span>
                   </div>
                 );
               })}
@@ -132,30 +141,30 @@ export default function Dashboard() {
 
         {/* Map */}
         <Panel title="Active Routes" testid="dashboard-map" className="mb-4">
-          <div className="bg-ct-bg2 -m-5">
-            <WorldMap shipments={SHIPMENTS} activeId={null} onSelect={() => {}} />
+          <div className="bg-[var(--dr-track)] -m-5">
+            <WorldMap shipments={shipments} activeId={null} onSelect={() => {}} geoFill={dark ? "#1A1F27" : "#F0F0F2"} geoStroke={dark ? "#252B35" : "#E5E5EA"} />
           </div>
         </Panel>
 
         {/* Carrier Analytics */}
-        <div className="border border-ct-line bg-white mb-4" data-testid="carrier-analytics">
-          <div className="flex items-center justify-between px-5 py-3 border-b border-ct-line">
-            <span className="font-mono text-[11px] tracking-[0.2em] uppercase text-ct-gray3">Carrier Performance · Ranked by On-Time</span>
-            <span className="font-mono text-[10px] tracking-wide text-ct-gray3">On-Time % · Exceptions</span>
+        <div className="border border-[var(--dr-border)] bg-[var(--dr-panel)] mb-4" data-testid="carrier-analytics">
+          <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--dr-border)]">
+            <span className="font-mono text-[11px] tracking-[0.2em] uppercase text-[var(--dr-sub)]">Carrier Performance · Ranked by On-Time</span>
+            <span className="font-mono text-[10px] tracking-wide text-[var(--dr-sub)]">On-Time % · Exceptions</span>
           </div>
-          <div className="divide-y divide-ct-line">
+          <div className="divide-y divide-[var(--dr-border)]">
             {[...DASHBOARD.byCarrier].sort((a, b) => b.onTime - a.onTime).map((c, i) => {
               const good = c.onTime >= 92;
               const bar = good ? "#34C759" : c.onTime >= 88 ? "#FF9500" : "#FF3B30";
               return (
-                <div key={c.carrier} className="flex items-center gap-4 px-5 py-3.5 hover:bg-ct-bg2 transition-colors" data-testid={`carrier-row-${i}`}>
-                  <span className="font-mono text-xs text-ct-gray3 w-6">{String(i + 1).padStart(2, "0")}</span>
+                <div key={c.carrier} className="flex items-center gap-4 px-5 py-3.5 hover:bg-[var(--dr-track)] transition-colors" data-testid={`carrier-row-${i}`}>
+                  <span className="font-mono text-xs text-[var(--dr-sub)] w-6">{String(i + 1).padStart(2, "0")}</span>
                   <div className="w-40 shrink-0">
-                    <div className="text-sm font-medium text-ct-ink">{c.carrier}</div>
-                    <div className="font-mono text-[10px] text-ct-gray3">{c.mode} · {c.shipments.toLocaleString()} shpmts</div>
+                    <div className="text-sm font-medium text-[var(--dr-text)]">{c.carrier}</div>
+                    <div className="font-mono text-[10px] text-[var(--dr-sub)]">{c.mode} · {c.shipments.toLocaleString()} shpmts</div>
                   </div>
                   <div className="flex-1 flex items-center gap-3">
-                    <div className="flex-1 bg-ct-bg3 h-2">
+                    <div className="flex-1 bg-[var(--dr-track)] h-2">
                       <motion.div className="h-full" style={{ background: bar }} initial={{ width: 0 }} whileInView={{ width: `${c.onTime}%` }} viewport={{ once: true }} transition={{ duration: 0.8 }} />
                     </div>
                     <span className="font-mono text-sm font-semibold w-12 text-right" style={{ color: bar }}>{c.onTime}%</span>
@@ -170,31 +179,31 @@ export default function Dashboard() {
         </div>
 
         {/* Table with filters */}
-        <div className="border border-ct-line bg-white" data-testid="shipment-table">
-          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-ct-line">
+        <div className="border border-[var(--dr-border)] bg-[var(--dr-panel)]" data-testid="shipment-table">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-[var(--dr-border)]">
             <div className="flex flex-wrap gap-1.5">
               {["all", ...Object.keys(STATUS)].map((f) => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
-                  className={`font-mono text-[11px] tracking-wide uppercase px-3 py-1.5 border transition-colors ${filter === f ? "bg-ct-ink text-white border-ct-ink" : "border-ct-line text-ct-gray2 hover:border-ct-gray3"}`}
+                  className={`font-mono text-[11px] tracking-wide uppercase px-3 py-1.5 border transition-colors ${filter === f ? "bg-ct-ink text-white border-ct-ink" : "border-[var(--dr-border)] text-[var(--dr-sub)] hover:border-ct-gray3"}`}
                   data-testid={`filter-${f}`}
                 >
                   {f === "all" ? "All" : STATUS[f].label}
                 </button>
               ))}
             </div>
-            <div className="flex items-center gap-2 border border-ct-line px-3 py-1.5">
-              <Search size={14} className="text-ct-gray3" />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search ID / destination" className="text-sm focus:outline-none w-44" data-testid="table-search" />
+            <div className="flex items-center gap-2 border border-[var(--dr-border)] px-3 py-1.5">
+              <Search size={14} className="text-[var(--dr-sub)]" />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search ID / destination" className="text-sm bg-transparent text-[var(--dr-text)] focus:outline-none w-44" data-testid="table-search" />
             </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="font-mono text-[10px] tracking-[0.15em] uppercase text-ct-gray3">
+                <tr className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--dr-sub)]">
                   {["Shipment", "Status", "Mode", "Origin", "Destination", "Carrier", "ETA", ""].map((h) => (
-                    <th key={h} className="text-left font-normal px-5 py-3 border-b border-ct-line">{h}</th>
+                    <th key={h} className="text-left font-normal px-5 py-3 border-b border-[var(--dr-border)]">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -202,18 +211,18 @@ export default function Dashboard() {
                 {filtered.map((s) => {
                   const st = STATUS[s.status];
                   return (
-                    <tr key={s.id} className="border-b border-ct-line hover:bg-ct-bg2 transition-colors" data-testid={`row-${s.id}`}>
-                      <td className="px-5 py-3.5 font-mono font-semibold text-ct-ink">{s.id}</td>
+                    <tr key={s.id} className="border-b border-[var(--dr-border)] hover:bg-[var(--dr-track)] transition-colors" data-testid={`row-${s.id}`}>
+                      <td className="px-5 py-3.5 font-mono font-semibold text-[var(--dr-text)]">{s.id}</td>
                       <td className="px-5 py-3.5">
                         <span className="inline-flex items-center gap-1.5 font-mono text-[11px]" style={{ color: st.color }}>
                           <span className="h-1.5 w-1.5 rounded-full" style={{ background: st.color }} />{st.label}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 text-ct-gray2">{s.mode}</td>
-                      <td className="px-5 py-3.5 text-ct-gray2">{s.origin}</td>
-                      <td className="px-5 py-3.5 text-ct-ink font-medium">{s.destination}</td>
-                      <td className="px-5 py-3.5 text-ct-gray2">{s.carrier}</td>
-                      <td className="px-5 py-3.5 font-mono text-xs text-ct-gray2">{s.eta}</td>
+                      <td className="px-5 py-3.5 text-[var(--dr-sub)]">{s.mode}</td>
+                      <td className="px-5 py-3.5 text-[var(--dr-sub)]">{s.origin}</td>
+                      <td className="px-5 py-3.5 text-[var(--dr-text)] font-medium">{s.destination}</td>
+                      <td className="px-5 py-3.5 text-[var(--dr-sub)]">{s.carrier}</td>
+                      <td className="px-5 py-3.5 font-mono text-xs text-[var(--dr-sub)]"><Countdown eta={s.eta} status={s.status} compact /></td>
                       <td className="px-5 py-3.5">
                         <Link to={`/shipment/${s.id}`} className="text-ct-orange inline-flex items-center gap-1 hover:gap-2 transition-all" data-testid={`open-${s.id}`}>
                           <ArrowUpRight size={16} />
@@ -223,7 +232,7 @@ export default function Dashboard() {
                   );
                 })}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={8} className="px-5 py-10 text-center text-ct-gray3 text-sm">No shipments match your filters.</td></tr>
+                  <tr><td colSpan={8} className="px-5 py-10 text-center text-[var(--dr-sub)] text-sm">No shipments match your filters.</td></tr>
                 )}
               </tbody>
             </table>

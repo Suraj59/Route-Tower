@@ -11,7 +11,9 @@ import {
   Exceptions, Orchestration, CustomerExperience, Architecture, Impact, FinalCTA,
 } from "@/components/site/Sections";
 import NotificationPreview from "@/components/site/NotificationPreview";
-import { SHIPMENTS, STATUS } from "@/lib/data";
+import Countdown from "@/components/site/Countdown";
+import { STATUS } from "@/lib/data";
+import { useShipments } from "@/lib/shipStore";
 
 const heroLines = ["Track Every Shipment.", "Across Every Mile."];
 
@@ -75,7 +77,8 @@ function Hero({ onDemo }) {
 }
 
 function MapPanel() {
-  const [active, setActive] = useState("CT-10245");
+  const shipments = useShipments();
+  const [active, setActive] = useState(shipments[0]?.id);
   return (
     <div className="border border-ct-line bg-white" data-testid="map-panel">
       <div className="flex items-center justify-between px-5 py-3 border-b border-ct-line">
@@ -93,10 +96,10 @@ function MapPanel() {
       </div>
       <div className="grid md:grid-cols-12">
         <div className="md:col-span-8 border-b md:border-b-0 md:border-r border-ct-line bg-ct-bg2">
-          <WorldMap shipments={SHIPMENTS} activeId={active} onSelect={setActive} />
+          <WorldMap shipments={shipments} activeId={active} onSelect={setActive} />
         </div>
         <div className="md:col-span-4 p-4 space-y-2 max-h-[420px] overflow-y-auto">
-          {SHIPMENTS.map((s) => {
+          {shipments.map((s) => {
             const st = STATUS[s.status];
             return (
               <button
@@ -106,13 +109,18 @@ function MapPanel() {
                 data-testid={`ship-item-${s.id}`}
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-mono text-xs font-semibold text-ct-ink">{s.id}</span>
+                  <span className="font-mono text-xs font-semibold text-ct-ink flex items-center gap-1.5">
+                    {s.id}{s.createdByUser && <span className="text-[9px] text-ct-orange border border-ct-orange/40 px-1">NEW</span>}
+                  </span>
                   <span className="flex items-center gap-1.5 font-mono text-[10px] tracking-wide" style={{ color: st.color }}>
                     <span className="h-1.5 w-1.5 rounded-full" style={{ background: st.color }} />{st.label}
                   </span>
                 </div>
                 <div className="text-sm text-ct-ink font-medium">{s.origin} → {s.destination}</div>
-                <div className="font-mono text-[10px] text-ct-gray3 mt-1">{s.mode} · ETA {s.eta}</div>
+                <div className="font-mono text-[10px] text-ct-gray3 mt-1 flex items-center gap-2">
+                  <span>{s.mode}</span><span className="text-ct-line">|</span>
+                  <Countdown eta={s.eta} status={s.status} compact className="text-ct-gray2" />
+                </div>
               </button>
             );
           })}

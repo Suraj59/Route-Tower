@@ -9,7 +9,10 @@ from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional
 import uuid
+import json
+import re
 from datetime import datetime, timezone
+from emergentintegrations.llm.chat import LlmChat, UserMessage, TextDelta, StreamDone
 
 
 ROOT_DIR = Path(__file__).parent
@@ -25,6 +28,10 @@ EMAIL_BASE_URL = "https://integrations.emergentagent.com"
 EMAIL_KEY = os.environ["EMERGENT_EMAIL_KEY"]
 EMAIL_FROM_NAME = os.environ["EMAIL_FROM_NAME"]
 DEMO_LEAD_RECIPIENT = os.environ["DEMO_LEAD_RECIPIENT"]
+
+# LLM (Emergent universal key)
+EMERGENT_LLM_KEY = os.environ["EMERGENT_LLM_KEY"]
+GEMINI_MODEL = "gemini-3-flash-preview"
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -150,6 +157,91 @@ async def create_lead(input: DemoLeadCreate):
     await db.demo_leads.insert_one(lead.model_dump())
     emailed = await _send_lead_email(lead)
     return {"status": "success", "id": lead.id, "emailed": emailed}
+
+
+# ---------------- AI (Gemini 3 Flash) ----------------
+class AICreateRequest(BaseModel):
+    prompt: str
+
+
+class AIInsightRequest(BaseModel):
+    shipment: dict
+    question: Optional[str] = None
+
+
+async def _gemini(system_message: str, prompt: str, session: str) -> str:
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=session,
+        system_message=system_message,
+    ).with_model("gemini", GEMINI_MODEL)
+    out = ""
+    async for ev in chat.stream_message(UserMessage(text=prompt)):
+        if isinstance(ev, TextDelta):
+            out += ev.content
+        elif isinstance(ev, StreamDone):
+            break
+    return out
+
+
+def _extract_json(text: str):
+    text = text.strip()
+    fence = re.search(r"```(?:json)?\s*(.*?)```", text, re.DOTALL)
+    if fence:
+        text = fence.group(1).strip()
+    start = text.find("{")
+    end = text.rfind("}")
+    if start != -1 and end != -1:
+        text = text[start:end + 1]
+    return json.loads(text)
+
+
+CREATE_SYSTEM = (
+    "You are a logistics routing engine for the 'Route Tower' shipment visibility platform. "
+    "Given a natural-language request, design ONE realistic international/domestic shipment and "
+    "return ONLY strict minified JSON (no prose, no markdown). Schema: "
+    '{"mode": one of ["Road","Ocean","Air","Rail","Multimodal"], '
+    '"origin": city, "destination": city, "carrier": realistic carrier name (or "A + B" for multimodal), '
+    '"tracking": realistic tracking number, "eta": human date like "Aug 24, 2026", '
+    '"status": one of ["in_transit","delayed","held","exception","delivered"], '
+    '"current": short current-location string, '
+    '"stops": array of 3 to 6 objects [{"city":str,"country":str,"lat":number,"lng":number,'
+    '"event": normalized uppercase milestone like "PICKED UP"|"IN TRANSIT"|"CUSTOMS"|"PORT"|"DELIVERED"}]}. '
+    "Use accurate real-world latitude/longitude for each stop. First stop = origin, last stop = destination. "
+    "Pick a sensible mode and carriers for the geography. Keep it plausible and enterprise-grade."
+)
+
+
+@api_router.post("/ai/create-shipment")
+async def ai_create_shipment(req: AICreateRequest):
+    try:
+        raw = await _gemini(CREATE_SYSTEM, req.prompt, f"create-{uuid.uuid4()}")
+        data = _extract_json(raw)
+    except Exception as e:
+        logger.error(f"AI create failed: {e}")
+        raise HTTPException(status_code=502, detail="AI could not generate a shipment. Try rephrasing.")
+    data["id"] = "CT-" + str(uuid.uuid4().int % 90000 + 10000)
+    return {"status": "success", "shipment": data}
+
+
+INSIGHT_SYSTEM = (
+    "You are Route Tower's AI tracking co-pilot for logistics operations teams. "
+    "Given a shipment's JSON and an optional question, respond in 2-4 short sentences. "
+    "Be specific and actionable: assess risk, likely next milestone, and a recommended next action. "
+    "Plain text only, no markdown headers."
+)
+
+
+@api_router.post("/ai/insight")
+async def ai_insight(req: AIInsightRequest):
+    try:
+        q = req.question or "Give me a tracking status summary, risk assessment and the recommended next action."
+        prompt = f"Shipment:\n{json.dumps(req.shipment)}\n\nQuestion: {q}"
+        text = await _gemini(INSIGHT_SYSTEM, prompt, f"insight-{req.shipment.get('id','x')}")
+    except Exception as e:
+        logger.error(f"AI insight failed: {e}")
+        raise HTTPException(status_code=502, detail="AI insight is unavailable right now.")
+    return {"status": "success", "insight": text.strip()}
 
 
 app.include_router(api_router)
