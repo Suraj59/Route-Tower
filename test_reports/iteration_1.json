@@ -1,0 +1,18 @@
+{
+  "summary": "Full backend + frontend testing of Control Tower Shipment marketing site. All 6 backend pytest cases passed (POST /api/leads valid/minimal/422 invalid email/422 missing required + /api/status flow + root). All frontend flows validated end-to-end: landing hero + interactive world map + ship-item click highlight, demo modal open->fill->submit->demo-success, dashboard KPIs + status donut + ETA area chart + mode/country charts + filter-delayed filtering (1 row) + table-search filtering (1 row for CT-10188), open-CT-10188 navigation, and /shipment/CT-10188 detail page rendering DELAYED status, journey timeline, current-location map, exception panel, and events panel.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_leads.py", "/app/test_reports/pytest/leads.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py: logger is instantiated AFTER _send_lead_email uses it (line 117 references logger before basicConfig at 162). NameError would occur if email fails during import time; move logging init above helpers.",
+    "No rate limiting / captcha on POST /api/leads — public endpoint could be spammed to trigger outbound Resend emails.",
+    "No unique index / de-dup on demo_leads (email+company) — duplicates possible."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "Inserted 3 TEST_ leads and 1 TEST_client status_check via API during pytest run.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend test file at /app/backend/tests/test_leads.py — reusable regression suite. Frontend data-testids are stable (hero-demo-btn, map-panel, ship-item-<id>, demo-name/company/email/submit/success, filter-<status>, table-search, row-<id>, open-<id>, shipment-header, journey-panel, exception-panel, events-panel). Demo data is mocked in /app/frontend/src/lib/data.js."
+}
