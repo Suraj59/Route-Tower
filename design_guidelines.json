@@ -1,0 +1,131 @@
+{
+  "theme": "Clean Light Enterprise SaaS",
+  "typography": {
+    "headings": {
+      "family": "Cabinet Grotesk, sans-serif",
+      "weights": ["400", "800"],
+      "usage": "Use tight tracking (tracking-tight to tracking-tighter) for massive scale. Use font-black for problem statement numbers."
+    },
+    "body": {
+      "family": "Satoshi, sans-serif",
+      "weights": ["400", "500"],
+      "usage": "Clean, highly legible text for all dashboard and marketing body copy."
+    },
+    "mono": {
+      "family": "JetBrains Mono, monospace",
+      "weights": ["400", "600"],
+      "usage": "Use for tracking numbers, orchestration logic (IF/THEN/AND), and small technical metadata."
+    },
+    "scale": {
+      "h1": "text-5xl sm:text-6xl+ tracking-tighter leading-none",
+      "h2": "text-4xl sm:text-5xl tracking-tight leading-tight",
+      "h3": "text-2xl sm:text-3xl",
+      "h4": "text-lg sm:text-xl font-medium",
+      "body": "text-base leading-relaxed text-gray-600",
+      "mono_label": "text-xs tracking-[0.2em] uppercase text-gray-500 font-mono"
+    }
+  },
+  "colors": {
+    "background": {
+      "primary": "#FFFFFF",
+      "secondary": "#F7F7F8",
+      "tertiary": "#F0F0F2"
+    },
+    "text": {
+      "primary": "#111111",
+      "secondary": "#4A4A52",
+      "tertiary": "#8E8E93"
+    },
+    "brand": {
+      "accent": "#FF4500",
+      "accent_hover": "#E03E00",
+      "accent_light": "#FFEFEA"
+    },
+    "status": {
+      "in_transit": "#007AFF",
+      "delivered": "#34C759",
+      "delayed": "#FF9500",
+      "exception": "#FF3B30"
+    },
+    "border": "#E5E5EA"
+  },
+  "visual_enhancers": {
+    "surfaces": {
+      "marketing_cards": "Flat background (#F7F7F8) with 1px border (#E5E5EA), no shadow. On hover, slight lift (-translate-y-1) and subtle shadow (shadow-lg).",
+      "dashboard_panels": "border-collapse style layout, stark white with sharp 1px borders, no rounded corners (rounded-none or max rounded-sm).",
+      "header": "Crystal Glassmorphism: bg-white/70 backdrop-blur-xl backdrop-saturate-150 border-b border-gray-200/50. NEVER fully transparent."
+    },
+    "treatments": {
+      "photography": "Spotlight effect or clipped frames. Never use full-bleed generic stock. Mask images into geometric shapes or architecturally aligned boxes.",
+      "lines": "Use 1px vertical and horizontal dividing lines to create a 'Swiss Grid' architectural feel."
+    }
+  },
+  "grids_and_layouts": {
+    "marketing": {
+      "spacing": "Generous. Use py-24 to py-32 for sections. Container must have internal padding.",
+      "bento_grid": "Asymmetrical. Base: grid-cols-1 md:grid-cols-12 gap-8. Mix spans (e.g., col-span-8, col-span-4)."
+    },
+    "dashboard": {
+      "spacing": "Dense. Use p-4 to p-6.",
+      "grid": "High density grid. Base: grid-cols-1 md:grid-cols-4 gap-4. Every pixel utilized. h-full on children."
+    }
+  },
+  "motion": {
+    "scrolling": "Use lenis for smooth momentum scrolling. This is MANDATORY for the premium feel.",
+    "kinetic_hero": "Masked line-by-line reveal on load. Use framer-motion: overflow-hidden wrapper, child div animates y from 100% to 0 with custom cubic-bezier ease.",
+    "parallax": "Subtle framer-motion useScroll/useTransform for the hero image or map to move slightly slower than the scroll speed.",
+    "micro_interactions": "All buttons and interactive cards must have hover scales (scale 0.98 or 1.02) and color transitions."
+  },
+  "media": {
+    "maps": "react-simple-maps for the interactive world shipment map. Use a clean, light SVG topology. Animated routes (SVG dasharray) and status markers.",
+    "icons": "lucide-react for sharp, clean SaaS icons. 1.5 stroke width."
+  },
+  "3d_libraries": [
+    {
+      "name": "react-simple-maps",
+      "usage": "2D interactive map with animated SVG paths representing shipment routes. Lightweight, fits the clean SaaS aesthetic better than a heavy 3D globe."
+    }
+  ],
+  "accessibility": {
+    "contrast": "Ensure all text against the #F7F7F8 background meets 4.5:1 ratio. The orange accent (#FF4500) must only be used on white backgrounds for text or as a background with white text.",
+    "motion": "Respect prefers-reduced-motion media query for the framer-motion reveals.",
+    "testing": "All interactive elements MUST include a data-testid attribute in kebab-case."
+  },
+  "image_urls": {
+    "hero_abstract": {
+      "url": "https://images.pexels.com/photos/11440445/pexels-photo-11440445.jpeg",
+      "description": "Clean minimalist white architectural corner, used for the abstract right-side visual in the hero."
+    },
+    "cargo_ocean": {
+      "url": "https://images.pexels.com/photos/14810115/pexels-photo-14810115.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "description": "Top-down aerial view of a cargo ship, used in the 'Multi-modal' section or 'Legs' visual."
+    },
+    "warehouse_modern": {
+      "url": "https://images.pexels.com/photos/4487363/pexels-photo-4487363.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "description": "Bright modern warehouse, used in the 'Who We Serve' or 'Manifesto' sections."
+    }
+  },
+  "component_specific_treatments": {
+    "manifesto_chapters": "Massive typography. Number '01' in font-black text-gray-200. The title overlaps the number.",
+    "editorial_marquee": "react-fast-marquee. Use JetBrains Mono, text-sm, wide tracking. Pale gray background (#F7F7F8) with dark text. Very slow speed. Format: '+++ NEW YORK -> LONDON [IN TRANSIT] +++ TOKYO -> SF [DELIVERED]'",
+    "event_normalization_visual": "A diagram showing chaotic messy inputs ('Carrier A', 'Carrier B') flowing into a clean, sharp, orange-highlighted box: 'PICKED UP'.",
+    "orchestration_rule_builder": "A minimalist interactive component showing IF [Condition] AND [Condition] THEN [Action]. Use mono font for the logic keywords.",
+    "shipment_timeline": "Vertical stepped timeline. Use sharp 1px vertical lines. Status dots: orange for exceptions, blue for transit, green for delivered."
+  },
+  "UNIVERSAL GUIDELINES FOR MAIN AGENT": [
+    "You tend to converge toward generic outputs. Break the mold. Ensure the design feels like a high-growth tech startup, not a boring traditional logistics firm.",
+    "Do NOT center align the app container. No '.App { text-align: center; }'. Keep text mostly left-aligned.",
+    "Never use AI emoji characters.",
+    "Use glass-morphism (backdrop-blur-xl bg-white/70) for the sticky header.",
+    "Use 2-3x more spacing than typical (e.g., py-24 or py-32 for marketing sections).",
+    "Ensure all interactive elements have data-testid attributes."
+  ],
+  "instructions_to_main_agent": {
+    "files": "You have .js files, NOT .tsx files. Write all components as .js or .jsx.",
+    "architecture": "Build a hybrid app with React router. Routes: '/' (Marketing Landing Page), '/dashboard' (Control Tower Dashboard Demo), '/shipment/123' (Shipment Detail Demo).",
+    "styling": "Use Tailwind CSS. Add Cabinet Grotesk (headings), Satoshi (body), and JetBrains Mono to index.css via font-face or Google Fonts imports.",
+    "animations": "Wrap key marketing sections in framer-motion <motion.div> for scroll reveals (whileInView). Implement the kinetic hero text reveal.",
+    "components": "Use Shadcn UI for dashboard elements (Table, Cards, Badges, Tabs), but heavily strip down their styles to match the 'flat, 1px border' Swiss aesthetic. No heavy shadows.",
+    "map": "Use react-simple-maps on the homepage and dashboard to show shipment routes. Make it interactive (hover states on markers)."
+  }
+}
