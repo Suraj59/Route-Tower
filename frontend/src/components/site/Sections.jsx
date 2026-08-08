@@ -82,7 +82,7 @@ export const Solution = () => (
         <div className="md:col-span-7">
           <Reveal>
             <h2 className="font-display text-4xl sm:text-5xl md:text-6xl tracking-tighter leading-[0.95] text-ct-ink">
-              One Control Tower.
+              One Route Tower.
               <br />One shipment journey.
             </h2>
           </Reveal>
@@ -427,7 +427,7 @@ export const Architecture = () => (
           </div>
         </div>
         <div className="bg-ct-ink text-white p-8 text-center">
-          <div className="font-mono text-[11px] tracking-[0.25em] uppercase text-ct-orange mb-2">Control Tower Shipment</div>
+          <div className="font-mono text-[11px] tracking-[0.25em] uppercase text-ct-orange mb-2">Route Tower</div>
           <div className="flex flex-wrap justify-center gap-2 mt-4">
             {["Normalized Events", "Shipment Journey", "ETA", "Exceptions", "Analytics", "Notifications", "Orchestration"].map((s) => (
               <span key={s} className="text-xs border border-white/20 px-3 py-1.5 text-white/80">{s}</span>
@@ -517,7 +517,7 @@ export const FinalCTA = ({ onDemo }) => (
         Stop tracking shipments across dozens of systems.
       </h2>
       <p className="text-ct-gray2 text-lg mt-6 max-w-xl mx-auto">
-        Bring every shipment into one control tower.
+        Bring every shipment into one Route Tower.
       </p>
       <button onClick={onDemo} className="mt-10 bg-ct-orange text-white text-base font-medium px-8 py-4 hover:bg-ct-orangehover transition-colors inline-flex items-center gap-2" data-testid="final-cta-demo-btn">
         Request a Demo <ArrowRight size={18} />

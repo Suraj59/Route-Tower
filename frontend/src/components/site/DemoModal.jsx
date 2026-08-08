@@ -62,7 +62,7 @@ export default function DemoModal({ open, onClose }) {
                   <Check size={26} />
                 </div>
                 <h3 className="font-display text-2xl tracking-tight text-ct-ink">Request received</h3>
-                <p className="text-ct-gray2 mt-2 text-sm">Our team will reach out to schedule your control tower walkthrough.</p>
+                <p className="text-ct-gray2 mt-2 text-sm">Our team will reach out to schedule your Route Tower walkthrough.</p>
                 <button onClick={close} className="mt-6 bg-ct-ink text-white text-sm px-6 py-2.5 hover:bg-ct-orange transition-colors" data-testid="demo-success-close">
                   Done
                 </button>

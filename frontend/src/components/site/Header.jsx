@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Radar } from "lucide-react";
 
 export default function Header({ onDemo }) {
   const [scrolled, setScrolled] = useState(false);
   const loc = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -12,10 +13,25 @@ export default function Header({ onDemo }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const goToAnchor = (e, hash) => {
+    e.preventDefault();
+    const target = hash.replace("/#", "#");
+    const scroll = () => window.lenis
+      ? window.lenis.scrollTo(target, { offset: -70 })
+      : document.querySelector(target)?.scrollIntoView({ behavior: "smooth" });
+    if (loc.pathname !== "/") {
+      navigate("/");
+      setTimeout(scroll, 400);
+    } else {
+      scroll();
+    }
+  };
+
   const nav = [
     { label: "Platform", href: "/#solution" },
     { label: "Journey", href: "/#journey" },
     { label: "Exceptions", href: "/#exceptions" },
+    { label: "Pricing", href: "/pricing", route: true },
     { label: "Dashboard", href: "/dashboard", route: true },
   ];
 
@@ -32,7 +48,7 @@ export default function Header({ onDemo }) {
             <Radar className="h-4.5 w-4.5" strokeWidth={1.8} size={18} />
           </div>
           <span className="font-display font-extrabold text-[15px] tracking-tight text-ct-ink">
-            Control Tower<span className="text-ct-orange">.</span>
+            Route Tower<span className="text-ct-orange">.</span>
           </span>
         </Link>
 
@@ -43,7 +59,7 @@ export default function Header({ onDemo }) {
                 {n.label}
               </Link>
             ) : (
-              <a key={n.label} href={n.href} className="text-sm text-ct-gray2 hover:text-ct-ink transition-colors" data-testid={`nav-${n.label.toLowerCase()}`}>
+              <a key={n.label} href={n.href} onClick={(e) => goToAnchor(e, n.href)} className="text-sm text-ct-gray2 hover:text-ct-ink transition-colors" data-testid={`nav-${n.label.toLowerCase()}`}>
                 {n.label}
               </a>
             )

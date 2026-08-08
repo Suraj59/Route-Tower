@@ -10,6 +10,7 @@ import {
   Marquee, Problem, Solution, Journey, MultiModal, Normalization,
   Exceptions, Orchestration, CustomerExperience, Architecture, Impact, FinalCTA,
 } from "@/components/site/Sections";
+import NotificationPreview from "@/components/site/NotificationPreview";
 import { SHIPMENTS, STATUS } from "@/lib/data";
 
 const heroLines = ["Track Every Shipment.", "Across Every Mile."];
@@ -29,7 +30,7 @@ function Hero({ onDemo }) {
       <div className="max-w-[1400px] mx-auto px-6 md:px-10">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
           <span className="font-mono text-[11px] tracking-[0.25em] uppercase text-ct-orange">
-            One Control Tower · Every Shipment · Every Mile · Every Event
+            One Route Tower · Every Shipment · Every Mile · Every Event
           </span>
         </motion.div>
 
@@ -48,7 +49,8 @@ function Hero({ onDemo }) {
             className="md:col-span-6 text-lg text-ct-gray2 leading-relaxed"
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.7 }}
           >
-            Control Tower Shipment gives enterprises a single, intelligent view of shipments across carriers, modes, facilities, ports, customs and last-mile networks.
+            Route Tower gives enterprises a single, intelligent view of shipments across carriers, modes, facilities, ports, customs and last-mile networks.
+            <span className="block mt-3 text-sm text-ct-ink font-medium">All your shipments — controlled from one Tower.</span>
           </motion.p>
           <motion.div
             className="md:col-span-6 flex flex-wrap gap-3 md:justify-end"
@@ -58,7 +60,7 @@ function Hero({ onDemo }) {
               Request a Demo <ArrowRight size={16} />
             </button>
             <Link to="/dashboard" className="border border-ct-line text-ct-ink text-sm font-medium px-6 py-3.5 hover:border-ct-ink transition-colors inline-flex items-center gap-2" data-testid="hero-explore-btn">
-              Explore the Control Tower <ArrowUpRight size={16} />
+              Explore Route Tower <ArrowUpRight size={16} />
             </Link>
           </motion.div>
         </div>
@@ -139,6 +141,7 @@ export default function Landing() {
       <Exceptions />
       <Orchestration />
       <CustomerExperience />
+      <NotificationPreview />
       <Architecture />
       <Impact />
       <FinalCTA onDemo={openDemo} />

@@ -10,10 +10,10 @@ export default function Footer({ onDemo }) {
               <div className="h-8 w-8 bg-ct-orange text-ct-ink grid place-items-center">
                 <Radar size={18} strokeWidth={1.8} />
               </div>
-              <span className="font-display font-extrabold text-lg tracking-tight">Control Tower</span>
+              <span className="font-display font-extrabold text-lg tracking-tight">Route Tower</span>
             </div>
             <p className="font-display text-2xl md:text-3xl tracking-tight leading-tight max-w-md">
-              Every shipment. Every carrier. Every mode. Every event. One intelligent control tower.
+              Every shipment. Every carrier. Every mode. Every event. One intelligent Route Tower.
             </p>
             <button onClick={onDemo} className="mt-8 bg-ct-orange text-white text-sm font-medium px-6 py-3 hover:bg-ct-orangehover transition-colors" data-testid="footer-demo-btn">
               Request a Demo
@@ -37,7 +37,7 @@ export default function Footer({ onDemo }) {
           </div>
         </div>
         <div className="mt-16 pt-8 border-t border-white/10 flex flex-col sm:flex-row justify-between gap-4">
-          <span className="font-mono text-[11px] tracking-wide text-white/40">© 2026 CONTROL TOWER SHIPMENT · DEMO DATA ONLY</span>
+          <span className="font-mono text-[11px] tracking-wide text-white/40">© 2026 ROUTE TOWER · DEMO DATA ONLY</span>
           <span className="font-mono text-[11px] tracking-wide text-white/40">FIRST MILE → MIDDLE MILE → LAST MILE</span>
         </div>
       </div>

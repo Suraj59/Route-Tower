@@ -87,7 +87,7 @@ def _lead_email_html(lead: DemoLead) -> str:
       <tr><td align="center">
         <table width="560" cellpadding="0" cellspacing="0" style="background:#FFFFFF;border:1px solid #E5E5EA;">
           <tr><td style="background:#111111;padding:24px 24px;">
-            <div style="font-family:Arial,sans-serif;font-size:11px;letter-spacing:3px;color:#FF4500;text-transform:uppercase;">Control Tower Shipment</div>
+            <div style="font-family:Arial,sans-serif;font-size:11px;letter-spacing:3px;color:#FF4500;text-transform:uppercase;">Route Tower</div>
             <div style="font-family:Arial,sans-serif;font-size:20px;color:#FFFFFF;font-weight:700;margin-top:6px;">New Demo Request</div>
           </td></tr>
           <tr><td style="padding:8px 8px;">

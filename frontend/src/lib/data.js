@@ -156,4 +156,23 @@ export const DASHBOARD = {
     { country: "Netherlands", value: 980 },
     { country: "Singapore", value: 760 },
   ],
+  byCarrier: [
+    { carrier: "Maersk Line", mode: "Ocean", onTime: 94, exceptions: 12, shipments: 2140 },
+    { carrier: "DB Schenker", mode: "Rail", onTime: 91, exceptions: 18, shipments: 1680 },
+    { carrier: "ANA Cargo", mode: "Air", onTime: 96, exceptions: 6, shipments: 1120 },
+    { carrier: "Hapag-Lloyd", mode: "Ocean", onTime: 88, exceptions: 27, shipments: 1540 },
+    { carrier: "J.B. Hunt", mode: "Road", onTime: 90, exceptions: 21, shipments: 1980 },
+    { carrier: "MSC", mode: "Ocean", onTime: 85, exceptions: 34, shipments: 2020 },
+  ],
 };
+
+// Post-purchase customer notification journey (for the animated preview)
+export const NOTIFICATIONS = [
+  { channel: "Email", title: "Order Confirmed", body: "Your order CT-10245 has been confirmed.", time: "9:04 AM" },
+  { channel: "SMS", title: "Picked Up", body: "Good news — your shipment was picked up in Shenzhen.", time: "11:20 AM" },
+  { channel: "Push", title: "In Transit", body: "Your shipment has departed on MV Nordic Star.", time: "6:45 PM" },
+  { channel: "Email", title: "At Customs", body: "Shipment arrived at customs. No action needed from you.", time: "8:12 AM" },
+  { channel: "SMS", title: "Customs Cleared", body: "Cleared customs — back on the move to Chicago.", time: "2:30 PM" },
+  { channel: "Push", title: "Out for Delivery", body: "Arriving today between 1–4 PM. Track live.", time: "9:15 AM" },
+  { channel: "Email", title: "Delivered", body: "Delivered to Chicago DC. Proof of delivery attached.", time: "3:48 PM" },
+];

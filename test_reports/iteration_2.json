@@ -1,0 +1,52 @@
+{
+  "summary": "Frontend-only regression after 'Route Tower' rename, /pricing route, animated map markers, notification-preview and carrier-analytics additions. All flows verified against public URL. Landing page DOES scroll from hero all the way to the footer (docH=11604, scrolled to y=10524, footer visible). Anchor nav (#journey/#exceptions/#solution) works via lenis and also correctly navigates home from /pricing before scrolling. Demo modal flow submits successfully (POST /api/leads -> 200) and demo-success renders. WorldMap and NotificationPreview render. Pricing page renders all 3 tiers + matrix + CTA, and tier-cta-enterprise opens the demo modal. Dashboard shows 'Route Tower Dashboard · Demo' with carrier-analytics rows 0..5. Shipment /shipment/CT-10188 renders DELAYED status.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Landing (lenis warning)", "issues": ["Console warning: 'Please ensure that the container has a non-static position, like relative/fixed/absolute to ensure scroll offset is calculated correctly.' — from lenis. Non-blocking, but the wrapper hosting lenis should have position:relative."]}
+    ]
+  },
+  "brand_rename_findings": {
+    "before_test": [
+      "Footer.jsx: '© 2026 CONTROL TOWER SHIPMENT · DEMO DATA ONLY' — visible on every page (landing, pricing, dashboard, shipment). BUG.",
+      "DemoModal.jsx success screen: 'Our team will reach out to schedule your control tower walkthrough.' — BUG."
+    ],
+    "fixed_by_this_agent": [
+      "Footer.jsx -> '© 2026 ROUTE TOWER · DEMO DATA ONLY'",
+      "DemoModal.jsx -> 'Our team will reach out to schedule your Route Tower walkthrough.'"
+    ],
+    "verified_after_fix": "grep -rni 'control tower' /app/frontend/src returns no matches; footer rendered text confirmed 'ROUTE TOWER'."
+  },
+  "feature_verification": {
+    "landing_full_page_scroll_to_footer": "PASS — programmatic lenis.scrollTo(docH) reaches y=10524 of 11604 and footer element is visible with new '© 2026 ROUTE TOWER' text.",
+    "brand_rename_route_tower_everywhere": "PASS after fixes (header logo 'Route Tower.', hero copy, dashboard header 'ROUTE TOWER DASHBOARD · DEMO', pricing, footer). No 'Control Tower' remnants left in source.",
+    "header_anchor_nav_landing": "PASS — nav-journey scrollY=3181 (#journey top=70), nav-exceptions scrollY=5327 (#exceptions top=70), nav-platform scrollY=2272 (#solution top=70).",
+    "header_anchor_nav_from_pricing": "PASS — clicking nav-journey from /pricing navigates to '/' then scrolls to #journey (final path='/', scrollY=3181, jTop=70).",
+    "world_map_and_animated_markers": "PASS — [data-testid=world-map] SVG renders with route paths and multiple animated pulsing dots visible in screenshot on both landing hero and dashboard.",
+    "notification_preview": "PASS — [data-testid=notification-preview] renders phone mockup and cycles cards (setInterval driven).",
+    "carrier_analytics_dashboard": "PASS — [data-testid=carrier-analytics] renders with carrier-row-0..5 all present.",
+    "pricing_page": "PASS — tier-growth, tier-enterprise, tier-global, pricing-matrix, pricing-demo-btn, tier-cta-enterprise all render. tier-cta-enterprise opens demo modal (demo-name input visible).",
+    "demo_request_end_to_end": "PASS — header-demo-btn opens modal; filling demo-name/demo-company/demo-email and submitting demo-submit posts to /api/leads (200) and shows demo-success 'Request received'. Direct curl to POST /api/leads also returns {status:success, id:..., emailed:true}.",
+    "shipment_detail_CT-10188": "PASS — DELAYED status pill, journey timeline (Picked Up..Delivered with 'Ocean Transit' CURRENT), current-location map with route dashes and origin/current/destination markers all render."
+  },
+  "test_report_links": ["/app/backend/tests/test_leads.py (from iter1)"],
+  "action_items": [
+    "Optional: address lenis console warning by ensuring the smooth-scroll wrapper element has an explicit position:relative to correctly compute scroll offsets."
+  ],
+  "critical_code_review_comments": [
+    "DemoModal.jsx catches error with bare `catch {}` without logging — consider logging axios error for observability.",
+    "Footer.jsx (and other pages) previously had a stale 'CONTROL TOWER SHIPMENT' string; add a lint rule / string constant for brand name to prevent drift.",
+    "lenis warning about container position should be resolved to avoid subtle scroll-offset issues on some viewports."
+  ],
+  "updated_files": [
+    "/app/frontend/src/components/site/Footer.jsx",
+    "/app/frontend/src/components/site/DemoModal.jsx"
+  ],
+  "success_rate": {"backend": "100% (POST /api/leads)", "frontend": "100% after brand-string fixes"},
+  "seed_data_creation": "Submitted one lead via demo modal (name='Test User', company='TestCo', email='test_demo2@example.com') and one via direct curl.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Landing page scrolling is confirmed working. Brand rename is now complete (grep 'control tower' returns 0 hits). If additional pages are added, ensure they don't reintroduce 'Control Tower' strings and that lenis smooth-scroll container has position:relative."
+}

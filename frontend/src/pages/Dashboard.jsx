@@ -38,7 +38,7 @@ export default function Dashboard() {
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
           <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
             <div>
-              <span className="font-mono text-[11px] tracking-[0.25em] uppercase text-ct-orange">Control Tower Dashboard · Demo</span>
+              <span className="font-mono text-[11px] tracking-[0.25em] uppercase text-ct-orange">Route Tower Dashboard · Demo</span>
               <h1 className="font-display text-4xl md:text-5xl tracking-tighter text-ct-ink mt-2">Global Shipment Overview</h1>
             </div>
             <div className="text-right">
@@ -136,6 +136,38 @@ export default function Dashboard() {
             <WorldMap shipments={SHIPMENTS} activeId={null} onSelect={() => {}} />
           </div>
         </Panel>
+
+        {/* Carrier Analytics */}
+        <div className="border border-ct-line bg-white mb-4" data-testid="carrier-analytics">
+          <div className="flex items-center justify-between px-5 py-3 border-b border-ct-line">
+            <span className="font-mono text-[11px] tracking-[0.2em] uppercase text-ct-gray3">Carrier Performance · Ranked by On-Time</span>
+            <span className="font-mono text-[10px] tracking-wide text-ct-gray3">On-Time % · Exceptions</span>
+          </div>
+          <div className="divide-y divide-ct-line">
+            {[...DASHBOARD.byCarrier].sort((a, b) => b.onTime - a.onTime).map((c, i) => {
+              const good = c.onTime >= 92;
+              const bar = good ? "#34C759" : c.onTime >= 88 ? "#FF9500" : "#FF3B30";
+              return (
+                <div key={c.carrier} className="flex items-center gap-4 px-5 py-3.5 hover:bg-ct-bg2 transition-colors" data-testid={`carrier-row-${i}`}>
+                  <span className="font-mono text-xs text-ct-gray3 w-6">{String(i + 1).padStart(2, "0")}</span>
+                  <div className="w-40 shrink-0">
+                    <div className="text-sm font-medium text-ct-ink">{c.carrier}</div>
+                    <div className="font-mono text-[10px] text-ct-gray3">{c.mode} · {c.shipments.toLocaleString()} shpmts</div>
+                  </div>
+                  <div className="flex-1 flex items-center gap-3">
+                    <div className="flex-1 bg-ct-bg3 h-2">
+                      <motion.div className="h-full" style={{ background: bar }} initial={{ width: 0 }} whileInView={{ width: `${c.onTime}%` }} viewport={{ once: true }} transition={{ duration: 0.8 }} />
+                    </div>
+                    <span className="font-mono text-sm font-semibold w-12 text-right" style={{ color: bar }}>{c.onTime}%</span>
+                  </div>
+                  <span className="flex items-center gap-1.5 font-mono text-xs text-status-exception w-20 justify-end">
+                    <span className="h-1.5 w-1.5 rounded-full bg-status-exception" />{c.exceptions}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Table with filters */}
         <div className="border border-ct-line bg-white" data-testid="shipment-table">
