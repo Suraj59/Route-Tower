@@ -1,17 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
   AreaChart, Area, Tooltip, CartesianGrid,
 } from "recharts";
-import { motion } from "framer-motion";
-import { ArrowUpRight, TrendingUp, Search, Moon, Sun } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowUpRight, TrendingUp, Search, Moon, Sun, Upload, Zap, Loader2 } from "lucide-react";
 import Header from "@/components/site/Header";
 import DemoModal from "@/components/site/DemoModal";
+import BulkImportModal from "@/components/site/BulkImportModal";
 import WorldMap from "@/components/site/WorldMap";
 import Countdown from "@/components/site/Countdown";
 import { DASHBOARD, STATUS } from "@/lib/data";
 import { useShipments } from "@/lib/shipStore";
+import { aiAlerts } from "@/lib/api";
 
 const Panel = ({ title, right, children, className = "", testid }) => (
   <div className={`border border-[var(--dr-border)] bg-[var(--dr-panel)] ${className}`} data-testid={testid}>
@@ -25,10 +27,27 @@ const Panel = ({ title, right, children, className = "", testid }) => (
 
 export default function Dashboard() {
   const [demo, setDemo] = useState(false);
+  const [bulk, setBulk] = useState(false);
   const [filter, setFilter] = useState("all");
   const [q, setQ] = useState("");
-  const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState(() => localStorage.getItem("rt_dark") === "1");
+  const [alerts, setAlerts] = useState(null);
+  const [alertsLoading, setAlertsLoading] = useState(false);
   const shipments = useShipments();
+
+  useEffect(() => { localStorage.setItem("rt_dark", dark ? "1" : "0"); }, [dark]);
+
+  const runScan = async () => {
+    setAlertsLoading(true);
+    try {
+      const a = await aiAlerts(shipments);
+      setAlerts(a || []);
+    } catch {
+      setAlerts([]);
+    } finally {
+      setAlertsLoading(false);
+    }
+  };
 
   const filtered = shipments.filter((s) =>
     (filter === "all" || s.status === filter) &&
@@ -45,7 +64,10 @@ export default function Dashboard() {
               <span className="font-mono text-[11px] tracking-[0.25em] uppercase text-ct-orange">Route Tower Dashboard · Demo</span>
               <h1 className="font-display text-4xl md:text-5xl tracking-tighter text-[var(--dr-text)] mt-2">Global Shipment Overview</h1>
             </div>
-            <div className="flex items-end gap-5">
+            <div className="flex items-end gap-3">
+              <button onClick={() => setBulk(true)} className="inline-flex items-center gap-2 border border-[var(--dr-border)] text-[var(--dr-text)] text-sm px-4 py-2.5 hover:border-ct-orange transition-colors" data-testid="bulk-open">
+                <Upload size={15} /> Bulk Import
+              </button>
               <button onClick={() => setDark((d) => !d)} className="inline-flex items-center gap-2 border border-[var(--dr-border)] text-[var(--dr-text)] text-sm px-4 py-2.5 hover:border-ct-orange transition-colors" data-testid="dark-toggle">
                 {dark ? <Sun size={15} /> : <Moon size={15} />} {dark ? "Light" : "Control Room"}
               </button>
@@ -178,6 +200,38 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Smart Alerts */}
+        <div className="border border-[var(--dr-border)] bg-[var(--dr-panel)] mb-4" data-testid="smart-alerts">
+          <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--dr-border)]">
+            <span className="font-mono text-[11px] tracking-[0.2em] uppercase text-[var(--dr-sub)] flex items-center gap-2"><Zap size={13} className="text-ct-orange" /> Smart Alerts · AI ETA-Risk Scan</span>
+            <button onClick={runScan} disabled={alertsLoading} className="inline-flex items-center gap-2 bg-ct-orange text-white text-xs font-medium px-3.5 py-2 hover:bg-ct-orangehover transition-colors disabled:opacity-60" data-testid="run-scan-btn">
+              {alertsLoading ? <><Loader2 size={13} className="animate-spin" /> Scanning…</> : <><Zap size={13} /> Run AI risk scan</>}
+            </button>
+          </div>
+          <div className="p-5">
+            {alerts === null && <p className="text-sm text-[var(--dr-sub)]">Run a scan to let AI flag shipments most likely to miss their ETA.</p>}
+            {alerts && alerts.length === 0 && !alertsLoading && <p className="text-sm text-status-delivered">No at-risk shipments detected — all tracking on schedule.</p>}
+            <div className="space-y-2">
+              <AnimatePresence>
+                {alerts && alerts.map((a, i) => (
+                  <motion.div key={a.id + i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                    className="flex flex-wrap items-center gap-3 border border-[var(--dr-border)] p-3.5" data-testid={`alert-${a.id}`}>
+                    <span className="font-mono text-xs font-semibold text-[var(--dr-text)] w-20">{a.id}</span>
+                    <span className={`font-mono text-[10px] tracking-wide uppercase px-2 py-1 ${a.risk === "high" ? "bg-status-exception/10 text-status-exception" : "bg-status-delayed/10 text-status-delayed"}`}>{a.risk} risk</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 h-1.5 bg-[var(--dr-track)]"><div className="h-full bg-ct-orange" style={{ width: `${a.probability || 50}%` }} /></div>
+                      <span className="font-mono text-xs text-[var(--dr-sub)]">{a.probability || 50}% miss</span>
+                    </div>
+                    <span className="text-sm text-[var(--dr-text)] flex-1 min-w-[160px]">{a.reason}</span>
+                    <span className="text-xs text-ct-orange font-medium">→ {a.action}</span>
+                    <Link to={`/shipment/${a.id}`} className="text-ct-orange" data-testid={`alert-open-${a.id}`}><ArrowUpRight size={16} /></Link>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+
         {/* Table with filters */}
         <div className="border border-[var(--dr-border)] bg-[var(--dr-panel)]" data-testid="shipment-table">
           <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-[var(--dr-border)]">
@@ -240,6 +294,7 @@ export default function Dashboard() {
         </div>
       </div>
       <DemoModal open={demo} onClose={() => setDemo(false)} />
+      <BulkImportModal open={bulk} onClose={() => setBulk(false)} />
     </div>
   );
 }

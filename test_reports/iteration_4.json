@@ -1,0 +1,20 @@
+{
+  "summary": "Iteration 4: Tested Route Tower 4 new features (Shareable public tracking, Bulk CSV import, Smart Alerts, Dark Control-Room theme persistence) + regressions. Backend AI endpoints /api/ai/normalize-csv and /api/ai/alerts return valid JSON with correct schema. Frontend: /track/:id renders read-only WITHOUT app nav (both seed-store and encoded ?d= payload), copy-track-link button on ShipmentDetail copies a valid tracking link containing /track/CT-10245?d=<base64>. Bulk Import modal opens, sample -> AI normalize -> preview -> import all successfully adds shipments (6 -> 9 rows) with toast 'Imported 3 shipments'. Smart Alerts run-scan-btn returned 4 alert rows with alert-open-* links. Dark mode toggle persists via localStorage rt_dark across page reload; toggling back to light also persists. AI insight on ShipmentDetail returns a natural-language insight paragraph. Landing/Dashboard load cleanly, no console errors observed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_new_features.py", "/app/backend/tests/test_ai.py", "/app/test_reports/pytest/new_features.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "share.js uses btoa on encodeURIComponent output — works fine for ASCII payloads (~680 chars for CT-10245); consider length guard for huge shipments to avoid URL size limits.",
+    "Dashboard rt_dark stored as '1'/'0' strings — consistent. Initial useState reads localStorage synchronously (good, no flash).",
+    "BulkImportModal has no per-shipment status validation before addShipment — if AI returns an unknown status value, STATUS[s.status] would be undefined; currently defaults to in_transit in the preview map but the imported shipment retains raw status. Consider normalizing on client too.",
+    "aiNormalizeCsv/aiAlerts have no axios timeout; backend has 25s cap so browser could hang if network stalls. Consider a client-side timeout matching backend."
+  ],
+  "updated_files": ["/app/backend/tests/test_new_features.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "n/a (no auth)",
+  "seed_data_creation": "None — imported shipments live only in browser localStorage rt_shipments_v1.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All 4 new features + regressions pass. Backend AI endpoints (create-shipment, insight, normalize-csv, alerts) all live via Emergent LLM key with Gemini 3 Flash. AI calls take ~3-8s. Frontend uses REACT_APP_BACKEND_URL. Public tracking works for both seed shipments (localStorage/seed) and encoded ?d= links. Dark theme persists via localStorage key 'rt_dark' ('1'/'0'). Bulk import adds to rt_shipments_v1."
+}

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Check, MapPin, Ship, Package, Clock, TriangleAlert, FileCheck, Play, Pause, Sparkles, Loader2, RotateCcw } from "lucide-react";
+import { ArrowLeft, Check, MapPin, Ship, Package, Clock, TriangleAlert, FileCheck, Play, Pause, Sparkles, Loader2, RotateCcw, Link2 } from "lucide-react";
 import Header from "@/components/site/Header";
 import DemoModal from "@/components/site/DemoModal";
 import WorldMap from "@/components/site/WorldMap";
@@ -9,6 +9,8 @@ import Countdown from "@/components/site/Countdown";
 import { STATUS, JOURNEY } from "@/lib/data";
 import { useShipments } from "@/lib/shipStore";
 import { aiInsight } from "@/lib/api";
+import { trackingLink } from "@/lib/share";
+import { toast } from "sonner";
 
 const SEED_EVENTS = [
   { t: "Aug 02 · 09:14", label: "Picked Up", loc: "Origin — Supplier Dock" },
@@ -101,6 +103,13 @@ export default function ShipmentDetail() {
               <h1 className="font-display text-4xl md:text-5xl tracking-tighter text-ct-ink">{s.id}</h1>
             </div>
             <div className="flex items-center gap-6">
+              <button
+                onClick={() => { navigator.clipboard?.writeText(trackingLink(s)); toast.success("Public tracking link copied"); }}
+                className="inline-flex items-center gap-2 border border-ct-line text-ct-ink text-sm px-4 py-2.5 hover:border-ct-ink transition-colors"
+                data-testid="copy-track-link"
+              >
+                <Link2 size={15} /> Copy tracking link
+              </button>
               <div className="text-right">
                 <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-ct-gray3 mb-1">Live ETA Countdown</div>
                 <Countdown eta={s.eta} status={s.status} className="text-2xl text-ct-ink" />

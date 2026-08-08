@@ -7,6 +7,7 @@ import Landing from "@/pages/Landing";
 import Dashboard from "@/pages/Dashboard";
 import ShipmentDetail from "@/pages/ShipmentDetail";
 import Pricing from "@/pages/Pricing";
+import TrackPage from "@/pages/TrackPage";
 
 function App() {
   useEffect(() => {
@@ -26,6 +27,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/shipment/:id" element={<ShipmentDetail />} />
+          <Route path="/track/:id" element={<TrackPage />} />
         </Routes>
       </BrowserRouter>
       <Toaster position="bottom-right" />

@@ -249,6 +249,65 @@ async def ai_insight(req: AIInsightRequest):
     return {"status": "success", "insight": text.strip()}
 
 
+class CSVRequest(BaseModel):
+    csv: str
+
+
+CSV_SYSTEM = (
+    "You are a data-normalization engine for the 'Route Tower' shipment platform. "
+    "The user pastes messy CSV/tabular shipment data (headers may vary or be missing). "
+    "Normalize EACH row into a shipment and return ONLY strict minified JSON: "
+    '{"shipments": [ { same schema as a Route Tower shipment } ] }. '
+    "Each shipment: {\"mode\": one of [\"Road\",\"Ocean\",\"Air\",\"Rail\",\"Multimodal\"], "
+    '"origin": city, "destination": city, "carrier": str, "tracking": str, '
+    '"eta": human date like "Sep 02, 2026", "status": one of ["in_transit","delayed","held","exception","delivered"], '
+    '"current": short string, "stops": 2-5 objects [{"city","country","lat":number,"lng":number,"event":UPPERCASE}]}. '
+    "Infer sensible modes, normalize varied status wording into the allowed values, and use real lat/lng. "
+    "Process at most 15 rows. No prose, no markdown."
+)
+
+
+@api_router.post("/ai/normalize-csv")
+async def ai_normalize_csv(req: CSVRequest):
+    try:
+        raw = await _gemini(CSV_SYSTEM, req.csv[:6000], f"csv-{uuid.uuid4()}")
+        data = _extract_json(raw)
+        ships = data.get("shipments", []) if isinstance(data, dict) else []
+    except Exception as e:
+        logger.error(f"CSV normalize failed: {e}")
+        raise HTTPException(status_code=502, detail="Could not normalize that data. Check the format.")
+    for s in ships:
+        s["id"] = "CT-" + str(uuid.uuid4().int % 90000 + 10000)
+    return {"status": "success", "shipments": ships, "count": len(ships)}
+
+
+class AlertsRequest(BaseModel):
+    shipments: List[dict]
+
+
+ALERTS_SYSTEM = (
+    "You are Route Tower's predictive risk engine. Given a JSON array of shipments, identify the ones "
+    "MOST LIKELY TO MISS their ETA. Return ONLY strict minified JSON: "
+    '{"alerts": [ {"id": shipment id, "risk": "high"|"medium", "probability": integer 0-100 (chance of ETA miss), '
+    '"reason": short cause, "action": short recommended next action} ] }. '
+    "Only include shipments with meaningful risk (skip delivered and clearly on-track ones). "
+    "Order by probability descending. No prose, no markdown."
+)
+
+
+@api_router.post("/ai/alerts")
+async def ai_alerts(req: AlertsRequest):
+    try:
+        slim = [{k: s.get(k) for k in ("id", "status", "mode", "origin", "destination", "eta", "current", "carrier")} for s in req.shipments]
+        raw = await _gemini(ALERTS_SYSTEM, json.dumps(slim), f"alerts-{uuid.uuid4()}")
+        data = _extract_json(raw)
+        alerts = data.get("alerts", []) if isinstance(data, dict) else []
+    except Exception as e:
+        logger.error(f"AI alerts failed: {e}")
+        raise HTTPException(status_code=502, detail="Risk scan is unavailable right now.")
+    return {"status": "success", "alerts": alerts, "count": len(alerts)}
+
+
 app.include_router(api_router)
 
 app.add_middleware(
