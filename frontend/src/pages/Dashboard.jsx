@@ -1,19 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
   AreaChart, Area, Tooltip, CartesianGrid,
 } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowUpRight, TrendingUp, Search, Moon, Sun, Upload, Zap, Loader2 } from "lucide-react";
+import { ArrowUpRight, TrendingUp, Search, Moon, Sun, Upload, Zap, Loader2, Bell, TriangleAlert } from "lucide-react";
 import Header from "@/components/site/Header";
 import DemoModal from "@/components/site/DemoModal";
 import BulkImportModal from "@/components/site/BulkImportModal";
 import WorldMap from "@/components/site/WorldMap";
 import Countdown from "@/components/site/Countdown";
 import { DASHBOARD, STATUS } from "@/lib/data";
-import { useShipments } from "@/lib/shipStore";
+import { useShipments, patchShipment } from "@/lib/shipStore";
 import { aiAlerts } from "@/lib/api";
+import { toast } from "sonner";
 
 const Panel = ({ title, right, children, className = "", testid }) => (
   <div className={`border border-[var(--dr-border)] bg-[var(--dr-panel)] ${className}`} data-testid={testid}>
@@ -33,6 +34,10 @@ export default function Dashboard() {
   const [dark, setDark] = useState(() => localStorage.getItem("rt_dark") === "1");
   const [alerts, setAlerts] = useState(null);
   const [alertsLoading, setAlertsLoading] = useState(false);
+  const [autoScan, setAutoScan] = useState(false);
+  const [newIds, setNewIds] = useState(new Set());
+  const [selected, setSelected] = useState(new Set());
+  const seenRef = useRef(new Set());
   const shipments = useShipments();
 
   useEffect(() => { localStorage.setItem("rt_dark", dark ? "1" : "0"); }, [dark]);
@@ -41,12 +46,45 @@ export default function Dashboard() {
     setAlertsLoading(true);
     try {
       const a = await aiAlerts(shipments);
-      setAlerts(a || []);
+      const list = a || [];
+      const fresh = list.filter((x) => !seenRef.current.has(x.id)).map((x) => x.id);
+      list.forEach((x) => seenRef.current.add(x.id));
+      setNewIds(new Set(fresh));
+      setAlerts(list);
     } catch {
       setAlerts([]);
     } finally {
       setAlertsLoading(false);
     }
+  };
+
+  // Auto-refresh risk scan every 2 minutes when enabled
+  useEffect(() => {
+    if (!autoScan) return;
+    runScan();
+    const t = setInterval(runScan, 120000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoScan]);
+
+  const toggleSel = (id) => setSelected((prev) => {
+    const n = new Set(prev);
+    n.has(id) ? n.delete(id) : n.add(id);
+    return n;
+  });
+
+  const notifyCustomers = () => {
+    const n = selected.size || (alerts ? alerts.length : 0);
+    toast.success(`Notifications queued for ${n} customer${n === 1 ? "" : "s"}`);
+  };
+
+  const openExceptions = () => {
+    const ids = selected.size ? [...selected] : (alerts || []).map((a) => a.id);
+    ids.forEach((id) => patchShipment(id, { status: "exception" }));
+    toast.success(`Opened ${ids.length} exception${ids.length === 1 ? "" : "s"}`);
+    // remove handled alerts from the list so the queue reflects action taken
+    setAlerts((prev) => (prev || []).filter((a) => !ids.includes(a.id)));
+    setSelected(new Set());
   };
 
   const filtered = shipments.filter((s) =>
@@ -202,21 +240,38 @@ export default function Dashboard() {
 
         {/* Smart Alerts */}
         <div className="border border-[var(--dr-border)] bg-[var(--dr-panel)] mb-4" data-testid="smart-alerts">
-          <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--dr-border)]">
+          <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 border-b border-[var(--dr-border)]">
             <span className="font-mono text-[11px] tracking-[0.2em] uppercase text-[var(--dr-sub)] flex items-center gap-2"><Zap size={13} className="text-ct-orange" /> Smart Alerts · AI ETA-Risk Scan</span>
-            <button onClick={runScan} disabled={alertsLoading} className="inline-flex items-center gap-2 bg-ct-orange text-white text-xs font-medium px-3.5 py-2 hover:bg-ct-orangehover transition-colors disabled:opacity-60" data-testid="run-scan-btn">
-              {alertsLoading ? <><Loader2 size={13} className="animate-spin" /> Scanning…</> : <><Zap size={13} /> Run AI risk scan</>}
-            </button>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setAutoScan((v) => !v)} className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 border transition-colors ${autoScan ? "border-ct-orange text-ct-orange" : "border-[var(--dr-border)] text-[var(--dr-sub)] hover:border-ct-orange"}`} data-testid="auto-scan-toggle">
+                <span className={`h-1.5 w-1.5 rounded-full ${autoScan ? "bg-ct-orange animate-pulse" : "bg-[var(--dr-sub)]"}`} />Auto {autoScan ? "On" : "Off"}
+              </button>
+              <button onClick={runScan} disabled={alertsLoading} className="inline-flex items-center gap-2 bg-ct-orange text-white text-xs font-medium px-3.5 py-2 hover:bg-ct-orangehover transition-colors disabled:opacity-60" data-testid="run-scan-btn">
+                {alertsLoading ? <><Loader2 size={13} className="animate-spin" /> Scanning…</> : <><Zap size={13} /> Run AI risk scan</>}
+              </button>
+            </div>
           </div>
           <div className="p-5">
-            {alerts === null && <p className="text-sm text-[var(--dr-sub)]">Run a scan to let AI flag shipments most likely to miss their ETA.</p>}
+            {alerts === null && <p className="text-sm text-[var(--dr-sub)]">Run a scan (or enable Auto) to let AI flag shipments most likely to miss their ETA.</p>}
             {alerts && alerts.length === 0 && !alertsLoading && <p className="text-sm text-status-delivered">No at-risk shipments detected — all tracking on schedule.</p>}
+
+            {alerts && alerts.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <span className="font-mono text-[11px] text-[var(--dr-sub)]">{selected.size ? `${selected.size} selected` : `${alerts.length} at risk`} · bulk actions:</span>
+                <button onClick={notifyCustomers} className="inline-flex items-center gap-1.5 border border-[var(--dr-border)] text-[var(--dr-text)] text-xs px-3 py-1.5 hover:border-ct-orange transition-colors" data-testid="bulk-notify"><Bell size={12} /> Notify customers</button>
+                <button onClick={openExceptions} className="inline-flex items-center gap-1.5 bg-status-exception/10 text-status-exception text-xs px-3 py-1.5 hover:bg-status-exception/20 transition-colors" data-testid="bulk-open-exceptions"><TriangleAlert size={12} /> Open exceptions</button>
+              </div>
+            )}
+
             <div className="space-y-2">
               <AnimatePresence>
                 {alerts && alerts.map((a, i) => (
                   <motion.div key={a.id + i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                    className="flex flex-wrap items-center gap-3 border border-[var(--dr-border)] p-3.5" data-testid={`alert-${a.id}`}>
-                    <span className="font-mono text-xs font-semibold text-[var(--dr-text)] w-20">{a.id}</span>
+                    className={`flex flex-wrap items-center gap-3 border p-3.5 ${selected.has(a.id) ? "border-ct-orange" : "border-[var(--dr-border)]"}`} data-testid={`alert-${a.id}`}>
+                    <input type="checkbox" checked={selected.has(a.id)} onChange={() => toggleSel(a.id)} className="accent-ct-orange" data-testid={`alert-select-${a.id}`} />
+                    <span className="font-mono text-xs font-semibold text-[var(--dr-text)] w-20 flex items-center gap-1.5">
+                      {a.id}{newIds.has(a.id) && <span className="text-[8px] bg-ct-orange text-white px-1 py-0.5 leading-none" data-testid={`alert-new-${a.id}`}>NEW</span>}
+                    </span>
                     <span className={`font-mono text-[10px] tracking-wide uppercase px-2 py-1 ${a.risk === "high" ? "bg-status-exception/10 text-status-exception" : "bg-status-delayed/10 text-status-delayed"}`}>{a.risk} risk</span>
                     <div className="flex items-center gap-2">
                       <div className="w-24 h-1.5 bg-[var(--dr-track)]"><div className="h-full bg-ct-orange" style={{ width: `${a.probability || 50}%` }} /></div>

@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Check, MapPin, Ship, Package, Clock, TriangleAlert, FileCheck, Play, Pause, Sparkles, Loader2, RotateCcw, Link2 } from "lucide-react";
+import { ArrowLeft, Check, MapPin, Ship, Package, Clock, TriangleAlert, FileCheck, Play, Pause, Sparkles, Loader2, RotateCcw, Link2, QrCode } from "lucide-react";
 import Header from "@/components/site/Header";
 import DemoModal from "@/components/site/DemoModal";
+import QRModal from "@/components/site/QRModal";
 import WorldMap from "@/components/site/WorldMap";
 import Countdown from "@/components/site/Countdown";
 import { STATUS, JOURNEY } from "@/lib/data";
@@ -25,6 +26,7 @@ export default function ShipmentDetail() {
   const { id } = useParams();
   const shipments = useShipments();
   const [demo, setDemo] = useState(false);
+  const [qr, setQr] = useState(false);
   const s = shipments.find((x) => x.id === id) || shipments[0];
   const st = STATUS[s.status];
 
@@ -109,6 +111,13 @@ export default function ShipmentDetail() {
                 data-testid="copy-track-link"
               >
                 <Link2 size={15} /> Copy tracking link
+              </button>
+              <button
+                onClick={() => setQr(true)}
+                className="inline-flex items-center gap-2 border border-ct-line text-ct-ink text-sm px-4 py-2.5 hover:border-ct-ink transition-colors"
+                data-testid="show-qr-btn"
+              >
+                <QrCode size={15} /> QR
               </button>
               <div className="text-right">
                 <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-ct-gray3 mb-1">Live ETA Countdown</div>
@@ -231,6 +240,7 @@ export default function ShipmentDetail() {
         </div>
       </div>
       <DemoModal open={demo} onClose={() => setDemo(false)} />
+      <QRModal open={qr} onClose={() => setQr(false)} shipment={s} />
     </div>
   );
 }

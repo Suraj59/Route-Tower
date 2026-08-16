@@ -1,0 +1,23 @@
+{
+  "summary": "Frontend-only testing for Route Tower iteration 5 (QR Tracking, Import from File w/ column mapping, Smart Alerts Auto-Refresh + NEW badges, Bulk Alert Actions). All 4 new features work end-to-end. Regression items (dark persist, brand, /track read-only) pass.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "BulkImportModal.onFile regex `/\\.csv$|text\\/csv|text\\/plain/.test(file.name + file.type)` concatenates name+type which is fragile — consider checking file.type or file.name separately.",
+    "Dashboard.jsx openExceptions uses `patchShipment` overrides layer but does not visually re-open the Smart Alerts alert row (it remains listed even after being flipped to exception). Consider dropping already-exception ids from the alert list or badging them.",
+    "seenRef persists across auto-scan cycles but is not cleared when the user manually clicks 'Run AI risk scan' after toggling Auto off — expected behavior, but worth documenting."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped)", "frontend": "100%"},
+  "seed_data_creation": "none (localStorage only)",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All iteration-5 features validated via Playwright against the public REACT_APP_BACKEND_URL. QR modal: canvas renders, download PNG produces `CT-10245-tracking-qr.png`, qr-copy writes `/track/CT-10245?d=<base64url>` link. BulkImportModal: bulk-file-input.set_input_files populates bulk-csv textarea (confirmed real file path), auto-map correctly maps ref/origin/destination/mode/status/eta (carrier=-1 when absent — expected), Normalise-with-AI returns results within ~5s, Import toast fires. Smart Alerts: auto-scan-toggle immediately runs scan; on first run every returned alert gets a NEW badge (4 badges observed). Bulk-notify shows 'Notifications queued for N' toast; bulk-open-exceptions patches status via shipStore.patchShipment overrides layer (verified row-<id> now displays 'Exception' in the table). Dark toggle writes rt_dark to localStorage and is applied via .dash-root.dark class on reload. /track/CT-10245 renders read-only and landing brand shows 'Route Tower'.",
+  "rca of the issue": "N/A — no issues found."
+}

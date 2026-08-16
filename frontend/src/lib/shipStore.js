@@ -2,22 +2,26 @@ import { useSyncExternalStore } from "react";
 import { SHIPMENTS, CITIES, STATUS } from "@/lib/data";
 
 const KEY = "rt_shipments_v1";
+const OKEY = "rt_overrides_v1";
 let listeners = new Set();
 
-const read = () => {
+const read = (k) => {
   try {
-    const raw = localStorage.getItem(KEY);
-    return raw ? JSON.parse(raw) : [];
+    const raw = localStorage.getItem(k);
+    return raw ? JSON.parse(raw) : null;
   } catch {
-    return [];
+    return null;
   }
 };
 
-let created = read();
+let created = read(KEY) || [];
+let overrides = read(OKEY) || {}; // { id: { status, ... } }
 let cache = null;
 
 const buildCache = () => {
-  cache = [...created, ...SHIPMENTS];
+  cache = [...created, ...SHIPMENTS].map((s) =>
+    overrides[s.id] ? { ...s, ...overrides[s.id] } : s
+  );
   return cache;
 };
 buildCache();
@@ -28,7 +32,6 @@ const emit = () => {
 };
 
 export const addShipment = (s) => {
-  // ensure routeCoords + route names present
   if (s.stops && !s.routeCoords) s.routeCoords = s.stops.map((p) => [p.lng, p.lat]);
   if (s.stops && !s.route) s.route = s.stops.map((p) => p.city);
   if (!STATUS[s.status]) s.status = "in_transit"; // normalise unknown statuses
@@ -45,6 +48,13 @@ export const removeShipment = (id) => {
   emit();
 };
 
+// patch works for both seed and created shipments (via overrides layer)
+export const patchShipment = (id, patch) => {
+  overrides = { ...overrides, [id]: { ...(overrides[id] || {}), ...patch } };
+  localStorage.setItem(OKEY, JSON.stringify(overrides));
+  emit();
+};
+
 const subscribe = (cb) => {
   listeners.add(cb);
   return () => listeners.delete(cb);
@@ -52,6 +62,5 @@ const subscribe = (cb) => {
 
 export const useShipments = () => useSyncExternalStore(subscribe, () => cache);
 
-// coordinates for a shipment route (works for seed + created)
 export const routeCoordsOf = (s) =>
   s.routeCoords || s.route.map((c) => CITIES[c]).filter(Boolean);
