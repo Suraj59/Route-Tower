@@ -1,58 +1,37 @@
-import { useSyncExternalStore } from "react";
-import { SHIPMENTS, CITIES, STATUS } from "@/lib/data";
+import { useEffect, useSyncExternalStore } from "react";
+import { authApi, getToken } from "@/lib/auth";
 
-const KEY = "rt_shipments_v1";
-const OKEY = "rt_overrides_v1";
+// Shipments now live in MongoDB, scoped to the logged-in user's tenant (see backend /api/shipments).
+let cache = [];
+let loaded = false;
+let loading = null;
 let listeners = new Set();
 
-const read = (k) => {
-  try {
-    const raw = localStorage.getItem(k);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-};
-
-let created = read(KEY) || [];
-let overrides = read(OKEY) || {}; // { id: { status, ... } }
-let cache = null;
-
-const buildCache = () => {
-  cache = [...created, ...SHIPMENTS].map((s) =>
-    overrides[s.id] ? { ...s, ...overrides[s.id] } : s
-  );
-  return cache;
-};
-buildCache();
-
-const emit = () => {
-  buildCache();
-  listeners.forEach((l) => l());
-};
-
-export const addShipment = (s) => {
+const normalize = (s) => {
   if (s.stops && !s.routeCoords) s.routeCoords = s.stops.map((p) => [p.lng, p.lat]);
   if (s.stops && !s.route) s.route = s.stops.map((p) => p.city);
-  if (!STATUS[s.status]) s.status = "in_transit"; // normalise unknown statuses
-  s.createdByUser = true;
-  created = [s, ...created];
-  localStorage.setItem(KEY, JSON.stringify(created));
-  emit();
   return s;
 };
 
-export const removeShipment = (id) => {
-  created = created.filter((s) => s.id !== id);
-  localStorage.setItem(KEY, JSON.stringify(created));
-  emit();
-};
+const emit = () => listeners.forEach((l) => l());
 
-// patch works for both seed and created shipments (via overrides layer)
-export const patchShipment = (id, patch) => {
-  overrides = { ...overrides, [id]: { ...(overrides[id] || {}), ...patch } };
-  localStorage.setItem(OKEY, JSON.stringify(overrides));
-  emit();
+export const loadShipments = async () => {
+  if (!getToken()) {
+    cache = [];
+    loaded = true;
+    emit();
+    return;
+  }
+  loading = authApi
+    .get("/shipments")
+    .then(({ data }) => { cache = data.map(normalize); })
+    .catch(() => { cache = []; })
+    .finally(() => {
+      loaded = true;
+      loading = null;
+      emit();
+    });
+  return loading;
 };
 
 const subscribe = (cb) => {
@@ -60,7 +39,36 @@ const subscribe = (cb) => {
   return () => listeners.delete(cb);
 };
 
-export const useShipments = () => useSyncExternalStore(subscribe, () => cache);
+export const useShipments = () => {
+  const shipments = useSyncExternalStore(subscribe, () => cache);
+  useEffect(() => {
+    if (!loaded && !loading) loadShipments();
+  }, []);
+  return shipments;
+};
 
-export const routeCoordsOf = (s) =>
-  s.routeCoords || s.route.map((c) => CITIES[c]).filter(Boolean);
+export const addShipment = async (s) => {
+  const saved = await authApi.post("/shipments", s).then((r) => r.data);
+  await loadShipments();
+  return normalize(saved);
+};
+
+// patches the shipment on the backend (tenant + permission checked server-side)
+export const patchShipment = async (id, patch) => {
+  await authApi.put(`/shipments/${id}`, patch);
+  await loadShipments();
+};
+
+export const removeShipment = async (id) => {
+  await authApi.delete(`/shipments/${id}`);
+  await loadShipments();
+};
+
+// call on logout so the next login starts from a clean slate
+export const resetShipments = () => {
+  cache = [];
+  loaded = false;
+  emit();
+};
+
+export const routeCoordsOf = (s) => s.routeCoords || [];

@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Radar, Plus } from "lucide-react";
-import CreateShipmentModal from "@/components/site/CreateShipmentModal";
+import { Radar, LogIn, LogOut, LayoutDashboard } from "lucide-react";
+import { toast } from "sonner";
+import { isAuthenticated, getUser, logout } from "@/lib/auth";
+import { resetShipments } from "@/lib/shipStore";
 
 export default function Header({ onDemo }) {
   const [scrolled, setScrolled] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
   const loc = useLocation();
   const navigate = useNavigate();
+  const authed = isAuthenticated();
+  const user = getUser();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -27,6 +30,13 @@ export default function Header({ onDemo }) {
     } else {
       scroll();
     }
+  };
+
+  const doLogout = () => {
+    logout();
+    resetShipments();
+    toast.success("Logged out");
+    navigate("/login");
   };
 
   const nav = [
@@ -69,13 +79,33 @@ export default function Header({ onDemo }) {
         </nav>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setCreateOpen(true)}
-            className="hidden sm:inline-flex items-center gap-1.5 border border-ct-line text-ct-ink text-sm font-medium px-4 py-2.5 hover:border-ct-ink transition-colors"
-            data-testid="header-create-btn"
-          >
-            <Plus size={15} /> Create Shipment
-          </button>
+          {authed ? (
+            <>
+              <span className="hidden sm:inline text-xs text-ct-gray3 font-mono" data-testid="header-current-user">{user?.email}</span>
+              <Link
+                to="/app"
+                className="inline-flex items-center gap-1.5 border border-ct-line text-ct-ink text-sm font-medium px-4 py-2.5 hover:border-ct-ink transition-colors"
+                data-testid="header-goto-app-btn"
+              >
+                <LayoutDashboard size={15} /> Go to App
+              </Link>
+              <button
+                onClick={doLogout}
+                className="inline-flex items-center gap-1.5 border border-ct-line text-ct-ink text-sm font-medium px-4 py-2.5 hover:border-ct-ink transition-colors"
+                data-testid="header-logout-btn"
+              >
+                <LogOut size={15} /> Logout
+              </button>
+            </>
+          ) : (
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-1.5 border border-ct-line text-ct-ink text-sm font-medium px-4 py-2.5 hover:border-ct-ink transition-colors"
+              data-testid="header-login-btn"
+            >
+              <LogIn size={15} /> Login
+            </Link>
+          )}
           <button
             onClick={onDemo}
             className="bg-ct-ink text-white text-sm font-medium px-5 py-2.5 hover:bg-ct-orange transition-colors duration-200"
@@ -85,7 +115,6 @@ export default function Header({ onDemo }) {
           </button>
         </div>
       </div>
-      <CreateShipmentModal open={createOpen} onClose={() => setCreateOpen(false)} onCreated={(id) => navigate(`/shipment/${id}`)} />
     </header>
   );
 }

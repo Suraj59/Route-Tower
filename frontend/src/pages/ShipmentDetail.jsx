@@ -1,14 +1,14 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Check, MapPin, Ship, Package, Clock, TriangleAlert, FileCheck, Play, Pause, Sparkles, Loader2, RotateCcw, Link2, QrCode } from "lucide-react";
-import Header from "@/components/site/Header";
+import { ArrowLeft, Check, MapPin, Ship, Package, Clock, TriangleAlert, FileCheck, Play, Pause, Sparkles, Loader2, RotateCcw, Link2, QrCode, Trash2 } from "lucide-react";
 import DemoModal from "@/components/site/DemoModal";
 import QRModal from "@/components/site/QRModal";
 import WorldMap from "@/components/site/WorldMap";
 import Countdown from "@/components/site/Countdown";
 import { STATUS, JOURNEY } from "@/lib/data";
-import { useShipments } from "@/lib/shipStore";
+import { useShipments, removeShipment } from "@/lib/shipStore";
+import { can } from "@/lib/auth";
 import { aiInsight } from "@/lib/api";
 import { trackingLink } from "@/lib/share";
 import { toast } from "sonner";
@@ -24,14 +24,15 @@ const SEED_EVENTS = [
 
 export default function ShipmentDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const shipments = useShipments();
   const [demo, setDemo] = useState(false);
   const [qr, setQr] = useState(false);
   const s = shipments.find((x) => x.id === id) || shipments[0];
-  const st = STATUS[s.status];
 
   // journey: created shipments derive from stops; seeds use static JOURNEY
   const journey = useMemo(() => {
+    if (!s) return JOURNEY;
     if (s.createdByUser && s.stops) {
       const n = s.stops.length;
       const activeIdx = s.status === "delivered" ? n - 1 : Math.max(0, Math.floor(n * 0.6));
@@ -46,6 +47,7 @@ export default function ShipmentDetail() {
   }, [s]);
 
   const events = useMemo(() => {
+    if (!s) return SEED_EVENTS;
     if (s.createdByUser && s.stops) {
       return s.stops.map((p, i) => ({ t: `Stop ${i + 1}`, label: p.event, loc: `${p.city}, ${p.country}` }));
     }
@@ -88,14 +90,25 @@ export default function ShipmentDetail() {
     }
   };
 
+  if (!s) {
+    return (
+      <div className="bg-ct-bg2 min-h-screen">
+        <div className="max-w-[1400px] mx-auto px-6 md:px-10 pt-10 pb-20 text-center text-ct-gray2">
+          No shipments found.
+        </div>
+        <DemoModal open={demo} onClose={() => setDemo(false)} />
+      </div>
+    );
+  }
+
+  const st = STATUS[s.status];
   const isException = s.status === "delayed" || s.status === "held" || s.status === "exception";
 
   return (
     <div className="bg-ct-bg2 min-h-screen">
-      <Header onDemo={() => setDemo(true)} />
-      <div className="max-w-[1400px] mx-auto px-6 md:px-10 pt-24 pb-20">
-        <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm text-ct-gray2 hover:text-ct-ink transition-colors mb-6" data-testid="back-to-dashboard">
-          <ArrowLeft size={16} /> Back to dashboard
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10 pt-10 pb-20">
+        <Link to="/app/shipments" className="inline-flex items-center gap-2 text-sm text-ct-gray2 hover:text-ct-ink transition-colors mb-6" data-testid="back-to-dashboard">
+          <ArrowLeft size={16} /> Back to shipments
         </Link>
 
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="border border-ct-line bg-white" data-testid="shipment-header">
@@ -119,6 +132,24 @@ export default function ShipmentDetail() {
               >
                 <QrCode size={15} /> QR
               </button>
+              {can("delete") && (
+                <button
+                  onClick={async () => {
+                    if (!window.confirm(`Delete shipment ${s.id}? This can't be undone.`)) return;
+                    try {
+                      await removeShipment(s.id);
+                      toast.success(`${s.id} deleted`);
+                      navigate("/app/shipments");
+                    } catch {
+                      toast.error("Couldn't delete shipment.");
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 border border-ct-line text-status-exception text-sm px-4 py-2.5 hover:border-status-exception transition-colors"
+                  data-testid="delete-shipment-btn"
+                >
+                  <Trash2 size={15} /> Delete
+                </button>
+              )}
               <div className="text-right">
                 <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-ct-gray3 mb-1">Live ETA Countdown</div>
                 <Countdown eta={s.eta} status={s.status} className="text-2xl text-ct-ink" />

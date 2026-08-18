@@ -87,10 +87,14 @@ export default function BulkImportModal({ open, onClose }) {
     }
   };
 
-  const importAll = () => {
-    result.forEach((s) => addShipment({ ...s }));
-    toast.success(`Imported ${result.length} shipments`);
-    close();
+  const importAll = async () => {
+    try {
+      await Promise.all(result.map((s) => addShipment({ ...s })));
+      toast.success(`Imported ${result.length} shipments`);
+      close();
+    } catch {
+      toast.error("Some shipments couldn't be imported.");
+    }
   };
 
   return (

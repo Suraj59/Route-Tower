@@ -5,14 +5,16 @@ import {
   AreaChart, Area, Tooltip, CartesianGrid,
 } from "recharts";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowUpRight, TrendingUp, Search, Moon, Sun, Upload, Zap, Loader2, Bell, TriangleAlert } from "lucide-react";
+import { ArrowUpRight, TrendingUp, Search, Moon, Sun, Upload, Zap, Loader2, Bell, TriangleAlert, Plus, Trash2 } from "lucide-react";
 import Header from "@/components/site/Header";
 import DemoModal from "@/components/site/DemoModal";
 import BulkImportModal from "@/components/site/BulkImportModal";
+import CreateShipmentModal from "@/components/site/CreateShipmentModal";
 import WorldMap from "@/components/site/WorldMap";
 import Countdown from "@/components/site/Countdown";
 import { DASHBOARD, STATUS } from "@/lib/data";
-import { useShipments, patchShipment } from "@/lib/shipStore";
+import { useShipments, patchShipment, removeShipment } from "@/lib/shipStore";
+import { can } from "@/lib/auth";
 import { aiAlerts } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -29,6 +31,7 @@ const Panel = ({ title, right, children, className = "", testid }) => (
 export default function Dashboard() {
   const [demo, setDemo] = useState(false);
   const [bulk, setBulk] = useState(false);
+  const [create, setCreate] = useState(false);
   const [filter, setFilter] = useState("all");
   const [q, setQ] = useState("");
   const [dark, setDark] = useState(() => localStorage.getItem("rt_dark") === "1");
@@ -78,13 +81,23 @@ export default function Dashboard() {
     toast.success(`Notifications queued for ${n} customer${n === 1 ? "" : "s"}`);
   };
 
-  const openExceptions = () => {
+  const openExceptions = async () => {
     const ids = selected.size ? [...selected] : (alerts || []).map((a) => a.id);
-    ids.forEach((id) => patchShipment(id, { status: "exception" }));
+    await Promise.all(ids.map((id) => patchShipment(id, { status: "exception" })));
     toast.success(`Opened ${ids.length} exception${ids.length === 1 ? "" : "s"}`);
     // remove handled alerts from the list so the queue reflects action taken
     setAlerts((prev) => (prev || []).filter((a) => !ids.includes(a.id)));
     setSelected(new Set());
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm(`Delete shipment ${id}? This can't be undone.`)) return;
+    try {
+      await removeShipment(id);
+      toast.success(`${id} deleted`);
+    } catch {
+      toast.error("Couldn't delete shipment.");
+    }
   };
 
   const filtered = shipments.filter((s) =>
@@ -103,9 +116,16 @@ export default function Dashboard() {
               <h1 className="font-display text-4xl md:text-5xl tracking-tighter text-[var(--dr-text)] mt-2">Global Shipment Overview</h1>
             </div>
             <div className="flex items-end gap-3">
-              <button onClick={() => setBulk(true)} className="inline-flex items-center gap-2 border border-[var(--dr-border)] text-[var(--dr-text)] text-sm px-4 py-2.5 hover:border-ct-orange transition-colors" data-testid="bulk-open">
-                <Upload size={15} /> Bulk Import
-              </button>
+              {can("edit") && (
+                <button onClick={() => setCreate(true)} className="inline-flex items-center gap-2 border border-[var(--dr-border)] text-[var(--dr-text)] text-sm px-4 py-2.5 hover:border-ct-orange transition-colors" data-testid="create-open">
+                  <Plus size={15} /> Create Shipment
+                </button>
+              )}
+              {can("edit") && (
+                <button onClick={() => setBulk(true)} className="inline-flex items-center gap-2 border border-[var(--dr-border)] text-[var(--dr-text)] text-sm px-4 py-2.5 hover:border-ct-orange transition-colors" data-testid="bulk-open">
+                  <Upload size={15} /> Bulk Import
+                </button>
+              )}
               <button onClick={() => setDark((d) => !d)} className="inline-flex items-center gap-2 border border-[var(--dr-border)] text-[var(--dr-text)] text-sm px-4 py-2.5 hover:border-ct-orange transition-colors" data-testid="dark-toggle">
                 {dark ? <Sun size={15} /> : <Moon size={15} />} {dark ? "Light" : "Control Room"}
               </button>
@@ -279,7 +299,7 @@ export default function Dashboard() {
                     </div>
                     <span className="text-sm text-[var(--dr-text)] flex-1 min-w-[160px]">{a.reason}</span>
                     <span className="text-xs text-ct-orange font-medium">→ {a.action}</span>
-                    <Link to={`/shipment/${a.id}`} className="text-ct-orange" data-testid={`alert-open-${a.id}`}><ArrowUpRight size={16} /></Link>
+                    <Link to={`/app/shipments/${a.id}`} className="text-ct-orange" data-testid={`alert-open-${a.id}`}><ArrowUpRight size={16} /></Link>
                   </motion.div>
                 ))}
               </AnimatePresence>
@@ -333,9 +353,16 @@ export default function Dashboard() {
                       <td className="px-5 py-3.5 text-[var(--dr-sub)]">{s.carrier}</td>
                       <td className="px-5 py-3.5 font-mono text-xs text-[var(--dr-sub)]"><Countdown eta={s.eta} status={s.status} compact /></td>
                       <td className="px-5 py-3.5">
-                        <Link to={`/shipment/${s.id}`} className="text-ct-orange inline-flex items-center gap-1 hover:gap-2 transition-all" data-testid={`open-${s.id}`}>
-                          <ArrowUpRight size={16} />
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link to={`/app/shipments/${s.id}`} className="text-ct-orange inline-flex items-center gap-1 hover:gap-2 transition-all" data-testid={`open-${s.id}`}>
+                            <ArrowUpRight size={16} />
+                          </Link>
+                          {can("delete") && (
+                            <button onClick={() => handleDelete(s.id)} className="text-status-exception hover:opacity-70 transition-opacity" data-testid={`delete-${s.id}`}>
+                              <Trash2 size={15} />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -350,6 +377,7 @@ export default function Dashboard() {
       </div>
       <DemoModal open={demo} onClose={() => setDemo(false)} />
       <BulkImportModal open={bulk} onClose={() => setBulk(false)} />
+      <CreateShipmentModal open={create} onClose={() => setCreate(false)} onCreated={() => setCreate(false)} />
     </div>
   );
 }

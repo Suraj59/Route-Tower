@@ -40,11 +40,16 @@ export default function CreateShipmentModal({ open, onClose, onCreated }) {
     }
   };
 
-  const confirmAdd = (s) => {
-    const saved = addShipment(s);
-    toast.success(`Shipment ${saved.id} created`);
-    onCreated && onCreated(saved.id);
-    close();
+  const confirmAdd = async (s) => {
+    try {
+      const saved = await addShipment(s);
+      toast.success(`Shipment ${saved.id} created`);
+      onCreated && onCreated(saved.id);
+      close();
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "Couldn't save that shipment.");
+      setLoading(false);
+    }
   };
 
   const submitManual = (e) => {
@@ -88,13 +93,13 @@ export default function CreateShipmentModal({ open, onClose, onCreated }) {
       s.mode = manual.mode; s.status = manual.status;
       if (manual.carrier) s.carrier = manual.carrier;
       if (manual.eta) s.eta = manual.eta;
-      confirmAdd(s);
+      await confirmAdd(s);
     } catch {
       // AI down — fall back to a simple route from the known cities table
       const fb = manualFallback();
       if (fb) {
         fb.id = "CT-" + Math.floor(Math.random() * 90000 + 10000);
-        confirmAdd(fb);
+        await confirmAdd(fb);
       } else {
         toast.error("Couldn't build that route. Try well-known city names or the AI tab.");
         setLoading(false);
